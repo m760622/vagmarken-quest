@@ -413,8 +413,8 @@ export const TRAFFIC_SIGNS: TrafficSign[] = [
     category: 'prohibition', shape: 'circle', color: 'red',
     symbol: '↕',
     imageUrl: signImage('C17'),
-    description: 'Fordon med högre totalvikt eller höjd än angiven siffra (i meter) är förbjudna att passera.',
-    descriptionEn: 'Vehicles with a higher gross weight or height than the figure shown (in metres) may not pass.',
+    description: 'Fordon som är högre än angiven siffra (i meter) är förbjudna att passera.',
+    descriptionEn: 'Vehicles taller than the figure shown (in metres) may not pass.',
     descriptionAr: 'ممنوع مرور المركبات التي يتجاوز ارتفاعها الرقم المُدوَّن على اللافتة (بالأمتار).',
   },
   {
@@ -573,9 +573,9 @@ export const TRAFFIC_SIGNS: TrafficSign[] = [
     category: 'information', shape: 'square', color: 'blue',
     symbol: '🛣️',
     imageUrl: signImage('E1'),
-    description: 'Motorväg börjar. Gäller regler om minsta hastighet (80 km/h), körfältsdisciplin och förbud mot gående/cyklister.',
-    descriptionEn: 'Motorway begins. Rules on minimum speed (80 km/h), lane discipline and a ban on pedestrians/cyclists apply.',
-    descriptionAr: 'بداية طريق سريع. تُطبَّق قواعد الحد الأدنى للسرعة (80 كم/ساعة) وانضباط الحارات وحظر المشاة والدراجين.',
+    description: 'Motorväg börjar. Särskilda regler gäller, bland annat är gång-, cykel- och mopedtrafik förbjuden.',
+    descriptionEn: 'Motorway begins. Special rules apply, including a ban on pedestrians, cyclists and mopeds.',
+    descriptionAr: 'بداية طريق سريع (موتورواي). تسري قواعد خاصة، منها منع المشاة والدراجات الهوائية والنارية الخفيفة.',
   },
   {
     id: 'E2', code: 'E2',
