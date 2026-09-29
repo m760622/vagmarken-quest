@@ -18,6 +18,7 @@ import { useMistakes, useProgress } from '@/hooks/useProgress';
 import { usePlayer } from '@/hooks/usePlayer';
 import { useCollection } from '@/hooks/useCollection';
 import { dueWithin } from '@/lib/collection';
+import { versionLabel } from '@/lib/version';
 import { displayStreak, streakAtRisk } from '@/lib/player';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -701,6 +702,11 @@ export default function StartScreen({
         </div>
         )}
       </main>
+
+      {/* Which version is running (and which build): the start bar sticks above it at the end of the page */}
+      <footer className="relative z-10 px-4 pb-5 pt-1 text-center text-[11px] text-[hsl(var(--muted-foreground))]/80">
+        {t(lang, 'menuVersion')} <bdi dir="ltr" className="font-semibold tabular-nums">{versionLabel()}</bdi>
+      </footer>
 
       <CategorySheet
         open={categoryOpen}
