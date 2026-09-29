@@ -113,7 +113,11 @@ export function useGame(muted = false) {
     const currentQ = qs[stateSnap.currentQuestion];
     const correct = chosenId !== null && chosenId === currentQ.correctId;
 
-    recordEvent({ type: 'answer', signId: currentQ.sign.id, correct, streak: correct ? stateSnap.streak + 1 : 0 });
+    recordEvent({
+      type: 'answer', signId: currentQ.sign.id, correct, streak: correct ? stateSnap.streak + 1 : 0,
+      pickedId: !correct && chosenId ? chosenId : undefined,
+      otherIds: correct ? currentQ.options.filter(o => o.id !== currentQ.correctId).map(o => o.id) : undefined,
+    });
 
     // Audio feedback — streaks get the rising combo chime
     if (correct) {

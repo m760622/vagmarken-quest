@@ -118,3 +118,107 @@ describe('lookFact', () => {
   });
 });
 
+
+describe('buildTwinRounds with the player\'s own mistakes', () => {
+  const ids = (list: { id: string }[]) => list.map(s => s.id);
+  const warning = all.filter(s => s.category === 'warning');
+
+  it('is the same as before without personal data: nothing is marked personal', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      expect(buildTwinRounds(all, 'all', 10, seeded(seed)).every(r => r.personal === false)).toBe(true);
+    }
+    // and empty personal data changes nothing either
+    const plain = buildTwinRounds(all, 'all', 10, seeded(8));
+    const empty = buildTwinRounds(all, 'all', 10, seeded(8), undefined, { mistakes: {}, confusions: {} });
+    expect(ids(empty.map(r => r.target))).toEqual(ids(plain.map(r => r.target)));
+    expect(empty.every(r => r.personal === false)).toBe(true);
+  });
+
+  it('takes 6 of 10 targets from the weak signs when there are enough of them', () => {
+    const weakIds = warning.slice(0, 12).map(s => s.id);
+    const mistakes = Object.fromEntries(weakIds.map(id => [id, 2]));
+    for (let seed = 1; seed <= 50; seed++) {
+      const rounds = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, { mistakes, confusions: {} });
+      expect(rounds.filter(r => weakIds.includes(r.target.id))).toHaveLength(6);
+      expect(new Set(rounds.map(r => r.target.id)).size).toBe(10);
+    }
+  });
+
+  it('takes all of the weak signs when there are fewer than 6, and marks exactly those rounds personal', () => {
+    const mistakes = { [warning[0].id]: 3, [warning[1].id]: 1 };
+    for (let seed = 1; seed <= 50; seed++) {
+      const rounds = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, { mistakes, confusions: {} });
+      const targets = ids(rounds.map(r => r.target));
+      expect(targets).toContain(warning[0].id);
+      expect(targets).toContain(warning[1].id);
+      expect(rounds.filter(r => r.personal).map(r => r.target.id).sort()).toEqual([warning[0].id, warning[1].id].sort());
+    }
+  });
+
+  it('the more mistakes a sign has, the likelier it is a target when there is a choice', () => {
+    const many = warning.slice(0, 20);
+    const mistakes = Object.fromEntries(many.map((s, i) => [s.id, i === 0 ? 4 : 1]));
+    let heavy = 0, light = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      const targets = ids(buildTwinRounds(all, 'all', 10, seeded(seed), undefined, { mistakes, confusions: {} }).map(r => r.target));
+      if (targets.includes(many[0].id)) heavy++;
+      if (targets.includes(many[1].id)) light++;
+    }
+    expect(heavy).toBeGreaterThan(light);
+  });
+
+  it('offers the sign the player really mixed up with the target, every time that target comes up', () => {
+    const a = warning[0], b = warning[5];
+    const personal = { mistakes: {}, confusions: { [a.id]: { [b.id]: 3 } } };
+    for (let seed = 1; seed <= 100; seed++) {
+      const rounds = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, personal);
+      const round = rounds.find(r => r.target.id === a.id)!;          // a is the only weak sign, so it is always a target
+      expect(round).toBeTruthy();
+      expect(ids(round.options)).toContain(b.id);
+      expect(round.personal).toBe(true);
+    }
+  });
+
+  it('also offers the mixed-up sign the other way round (asked B, picked A: A is a foil for B)', () => {
+    const a = warning[0], b = warning[5];
+    const personal = { mistakes: { [b.id]: 2 }, confusions: { [a.id]: { [b.id]: 3 } } };   // b is weak, so it is a target; a was asked and b was picked... a is b's partner
+    for (let seed = 1; seed <= 60; seed++) {
+      const round = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, personal).find(r => r.target.id === b.id)!;
+      expect(ids(round.options)).toContain(a.id);
+    }
+  });
+
+  it('marks a round personal when a real mix-up was used as a foil, even if the target was not weak', () => {
+    // A is weak (asked, wrong pick B). When B comes up as a random target, A is offered next to it.
+    const a = warning[0], b = warning[5];
+    const personal = { mistakes: {}, confusions: { [a.id]: { [b.id]: 2 } } };
+    let seen = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const round = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, personal).find(r => r.target.id === b.id);
+      if (!round) continue;
+      seen++;
+      expect(ids(round.options)).toContain(a.id);
+      expect(round.personal).toBe(true);
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
+  it('keeps to the chosen category for the targets: a weak sign from another category is not asked about', () => {
+    const warningSign = warning[0];
+    const rounds = buildTwinRounds(all, 'prohibition', 10, seeded(3), undefined, { mistakes: { [warningSign.id]: 4 }, confusions: {} });
+    expect(rounds.every(r => r.target.category === 'prohibition')).toBe(true);
+  });
+
+  it('still builds valid rounds: each target once, distinct names, 2 then 3 options', () => {
+    const mistakes = Object.fromEntries(warning.map(s => [s.id, 1]));
+    const confusions = { [warning[0].id]: { [warning[1].id]: 2, [all.find(s => s.category === 'prohibition')!.id]: 1 } };
+    for (let seed = 1; seed <= 100; seed++) {
+      const rounds = buildTwinRounds(all, 'all', 10, seeded(seed), undefined, { mistakes, confusions });
+      expect(rounds.map(r => r.options.length)).toEqual([2, 2, 2, 2, 3, 3, 3, 3, 3, 3]);
+      for (const r of rounds) {
+        expect(r.options.filter(o => o.id === r.target.id)).toHaveLength(1);
+        expect(new Set(r.options.map(o => o.name)).size).toBe(r.options.length);
+      }
+    }
+  });
+});

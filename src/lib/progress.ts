@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 import { Language } from '@/types/game';
 import { displayStreak, getPlayer, grantXp, levelFromXp } from '@/lib/player';
 import { recordMistake, resolveMistake } from '@/lib/mistakes';
+import { recordConfusion, resolveConfusions } from '@/lib/confusions';
 import { readLang } from '@/lib/prefs';
 
 export type GameMode = 'quiz' | 'review' | 'daily' | 'blitz' | 'memory' | 'match' | 'exam' | 'reveal' | 'odd' | 'collection' | 'twins' | 'classify';
 
 export type GameEvent =
-  | { type: 'answer'; signId: string; correct: boolean; streak?: number }
+  /** pickedId: the sign chosen instead (wrong answers); otherIds: the other options that were shown (right answers) */
+  | { type: 'answer'; signId: string; correct: boolean; streak?: number; pickedId?: string; otherIds?: readonly string[] }
   | { type: 'game'; mode: GameMode; correct?: number; total?: number; maxStreak?: number; seconds?: number };
 
 type L10n = Record<Language, string>;
@@ -206,6 +208,7 @@ export function recordEvent(e: GameEvent): void {
       stats.correct += 1;
       if (!stats.solved.includes(e.signId)) stats.solved.push(e.signId);
       if (resolveMistake(e.signId)) stats.fixed += 1;
+      if (e.otherIds?.length) resolveConfusions(e.signId, e.otherIds);
       bump('correct15', c => c + 1);
       if (e.streak) {
         stats.bestStreak = Math.max(stats.bestStreak, e.streak);
@@ -213,6 +216,7 @@ export function recordEvent(e: GameEvent): void {
       }
     } else {
       recordMistake(e.signId);
+      if (e.pickedId) recordConfusion(e.signId, e.pickedId);
     }
   } else {
     stats.games += 1;

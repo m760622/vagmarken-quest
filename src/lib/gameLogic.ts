@@ -3,6 +3,7 @@
  * so they can be checked on their own.
  */
 import type { SignCategory, TrafficSign } from '@/types/game';
+import { confusedWith, confusionWeight, type ConfusionMap } from '@/lib/confusionMap';
 
 export type Rng = () => number;
 
@@ -121,6 +122,32 @@ export interface TwinRound {
   target: TrafficSign;       // the sign that is named in the question
   options: TrafficSign[];    // the target and its look-alikes, shuffled (2 or 3)
   lookAlike: boolean;        // every option has the target's shape and colour
+  personal: boolean;         // built from this player's own mistakes: a weak target or a sign they really mixed up with it
+}
+
+/** What the game knows about the player: signs answered wrong (weights) and who was picked instead of whom. */
+export interface PersonalData {
+  mistakes: Record<string, number>;
+  confusions: ConfusionMap;
+}
+
+/** Share of the rounds whose target is taken from the player's weak signs, when there are enough of them. */
+export const WEAK_TARGET_SHARE = 0.6;
+
+/** `k` items drawn without replacement, the heavier ones more likely. */
+function weightedSample<T>(items: readonly T[], weightOf: (item: T) => number, k: number, rng: Rng): T[] {
+  const left = [...items];
+  const out: T[] = [];
+  while (out.length < k && left.length > 0) {
+    let r = rng() * left.reduce((sum, item) => sum + weightOf(item), 0);
+    let i = 0;
+    for (; i < left.length - 1; i++) {
+      r -= weightOf(left[i]);
+      if (r < 0) break;
+    }
+    out.push(left.splice(i, 1)[0]);
+  }
+  return out;
 }
 
 /**
@@ -138,6 +165,11 @@ export function lookAlikes(sign: TrafficSign, all: readonly TrafficSign[], rng: 
 /**
  * `count` rounds, each with a different target. Early rounds have two signs to choose from,
  * from `threeFrom` on there are three. The foils are look-alikes of the target.
+ *
+ * With `personal` data (what the player got wrong and which signs they mixed up), about
+ * WEAK_TARGET_SHARE of the targets are their weak signs (the more mistakes, the likelier), and each
+ * round first offers the signs the player really confused with the target, then look-alikes.
+ * Without it the rounds are the same as before.
  */
 export function buildTwinRounds(
   all: readonly TrafficSign[],
@@ -145,19 +177,38 @@ export function buildTwinRounds(
   count = 10,
   rng: Rng = Math.random,
   threeFrom = Math.ceil(count * 0.4),
+  personal?: PersonalData,
 ): TwinRound[] {
-  const targets = shuffle(signPool(all, category, count, rng), rng).slice(0, count);
+  const pool = signPool(all, category, count, rng);
+  const weightOf = (s: TrafficSign) => (personal ? (personal.mistakes[s.id] ?? 0) + confusionWeight(personal.confusions, s.id) : 0);
+  const weak = pool.filter(s => weightOf(s) > 0);
+  const chosenWeak = weightedSample(weak, weightOf, Math.min(weak.length, Math.ceil(count * WEAK_TARGET_SHARE)), rng);
+  // The rest come from signs that are not weak, so the share stays what it says; weak ones only if there is nothing else
+  const others = shuffle(pool.filter(s => !weak.includes(s)), rng);
+  const spareWeak = shuffle(weak.filter(s => !chosenWeak.includes(s)), rng);
+  const rest = [...others, ...spareWeak].slice(0, count - chosenWeak.length);
+  const targets = shuffle([...chosenWeak, ...rest], rng);
+
   return targets.map((target, i) => {
     const size = i >= threeFrom ? 3 : 2;
+    const partners = personal
+      ? confusedWith(personal.confusions, target.id)
+          .map(p => all.find(s => s.id === p.id))
+          .filter((s): s is TrafficSign => !!s && s.name !== target.name)
+      : [];
     const foils: TrafficSign[] = [];
-    for (const s of lookAlikes(target, all, rng)) {
+    let usedPartner = false;
+    for (const s of [...partners, ...lookAlikes(target, all, rng)]) {
       if (foils.length === size - 1) break;
-      if (!foils.some(f => f.name === s.name)) foils.push(s);
+      if (foils.some(f => f.name === s.name)) continue;
+      foils.push(s);
+      if (partners.includes(s)) usedPartner = true;
     }
     return {
       target,
       options: shuffle([target, ...foils], rng),
       lookAlike: foils.every(f => f.shape === target.shape && f.color === target.color),
+      personal: chosenWeak.includes(target) || usedPartner,
     };
   });
 }

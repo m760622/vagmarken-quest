@@ -15,6 +15,8 @@ import { recordEvent, type GameMode } from '@/lib/progress';
 
 export type RoundPhase = 'intro' | 'playing' | 'result';
 
+export interface AnswerDetail { pickedId?: string; otherIds?: readonly string[] }
+
 interface Options<R> {
   mode: GameMode;
   bestKey: string;
@@ -103,8 +105,11 @@ export function useRoundGame<R>(options: Options<R>) {
     setGained(0);
   }, [clearAdvance]);
 
-  /** `key` is what the player chose (null when the time ran out). */
-  const answer = useCallback((key: string | null, correct: boolean) => {
+  /**
+   * `key` is what the player chose (null when the time ran out). `detail` says which sign was picked
+   * instead (wrong answer) or which other signs were on screen (right answer), for the mix-up record.
+   */
+  const answer = useCallback((key: string | null, correct: boolean, detail?: AnswerDetail) => {
     const { round: current, streak: streakNow, options: o } = latest.current;
     if (answeredRef.current || !current) return;
     answeredRef.current = true;
@@ -120,7 +125,7 @@ export function useRoundGame<R>(options: Options<R>) {
     setMaxStreak(m => Math.max(m, newStreak));
     setScore(s => s + points);
     if (correct) setCorrectCount(c => c + 1);
-    recordEvent({ type: 'answer', signId: o.signIdOf(current), correct, streak: correct ? newStreak : undefined });
+    recordEvent({ type: 'answer', signId: o.signIdOf(current), correct, streak: correct ? newStreak : undefined, ...detail });
     if (correct) latest.current.playCorrect(); else latest.current.playWrong();
 
     if (correct) advanceRef.current = setTimeout(next, o.advanceMs ?? 1800);
