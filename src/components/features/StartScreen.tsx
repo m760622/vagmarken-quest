@@ -41,12 +41,12 @@ interface StartScreenProps {
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
   { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
   { id: 'exam',   icon: ClipboardCheck, labelKey: 'modeExam', descKey: 'modeExamDesc', hue: '84 78% 55%' },
+  { id: 'review', icon: History,  labelKey: 'modeReview', descKey: 'modeReviewDesc', hue: '350 89% 64%' },
   { id: 'daily',  icon: Calendar, labelKey: 'modeDaily',  descKey: 'modeDailyDesc',  hue: '32 96% 58%' },
   { id: 'blitz',  icon: Zap,      labelKey: 'modeBlitz',  descKey: 'modeBlitzDesc',  hue: '52 98% 56%' },
   { id: 'memory', icon: Brain,    labelKey: 'modeMemory', descKey: 'modeMemoryDesc', hue: '266 90% 70%' },
   { id: 'match',  icon: Puzzle,   labelKey: 'modeMatch',  descKey: 'modeMatchDesc',  hue: '330 88% 66%' },
   { id: 'learn',  icon: Layers,   labelKey: 'modeLearn',  descKey: 'modeLearnDesc',  hue: '199 92% 58%' },
-  { id: 'review', icon: History,  labelKey: 'modeReview', descKey: 'modeReviewDesc', hue: '350 89% 64%' },
 ];
 
 const DIFFICULTY_HUE: Record<Difficulty, string> = {
