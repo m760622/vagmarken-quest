@@ -298,8 +298,8 @@ export default function StartScreen({
   const handleStart = () => {
     if (selectedMode === 'review') {
       if (mistakeCount === 0) return;
-      const diff = (hardLocked && selectedDifficulty === 'hard') ? 'medium' : selectedDifficulty;
-      onStart('all', diff, TRAFFIC_SIGNS.filter(sg => mistakeIds.includes(sg.id)), { review: true });
+      // No difficulty choice here: review results are not saved and do not count toward unlocking Hard
+      onStart('all', 'medium', TRAFFIC_SIGNS.filter(sg => mistakeIds.includes(sg.id)), { review: true });
     } else if (selectedMode === 'quiz') {
       const diff = (hardLocked && selectedDifficulty === 'hard') ? 'medium' : selectedDifficulty;
       const pool = filteredSigns ?? undefined;
@@ -528,8 +528,8 @@ export default function StartScreen({
         </section>
         )}
 
-        {/* Difficulty — quiz and review */}
-        {(selectedMode === 'quiz' || selectedMode === 'review') && (
+        {/* Difficulty — quiz only */}
+        {selectedMode === 'quiz' && (
           <section className="rise-in" style={{ '--rise-delay': '0.05s' } as CSSProperties}>
             <SectionTitle>{t(lang, 'chooseDifficulty')}</SectionTitle>
             <div className="glass rounded-3xl p-1.5 grid grid-cols-3 gap-1.5">

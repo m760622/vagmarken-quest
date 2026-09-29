@@ -232,8 +232,9 @@ export default function ResultScreen({
         <div className="mt-2 mb-1"><XpChip earned={earned} lang={lang} /></div>
         <p className="text-[hsl(var(--muted-foreground))] text-sm mt-1">{t(lang, 'quizFinished')}</p>
         <p className="text-xs text-[hsl(var(--muted-foreground))]/80 mt-1">
-          {CATEGORY_LABELS_I18N[lang][state.selectedCategory]} ·{' '}
-          {t(lang, `diff${state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1)}`)}
+          {CATEGORY_LABELS_I18N[lang][state.selectedCategory]}
+          {/* A review run has no difficulty choice, so don't show one */}
+          {!isReview && ` · ${t(lang, `diff${state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1)}`)}`}
         </p>
       </div>
 
@@ -255,8 +256,8 @@ export default function ResultScreen({
         </div>
       </div>
 
-      {/* Medium progress hint when still locked */}
-      {state.difficulty === 'medium' && correctPct < 80 && !justUnlocked && !showOverlay && (
+      {/* Medium progress hint when still locked (review runs never count toward unlocking) */}
+      {!isReview && state.difficulty === 'medium' && correctPct < 80 && !justUnlocked && !showOverlay && (
         <div className="w-full mb-5 p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
