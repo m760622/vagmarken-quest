@@ -9,6 +9,8 @@ export default {
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
+	// hover: styles only where a real pointer can hover; on touch screens they stick to the last tap
+	future: { hoverOnlyWhenSupported: true },
 	theme: {
 		container: {
 			center: true,
