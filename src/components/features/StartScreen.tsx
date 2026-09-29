@@ -230,7 +230,7 @@ export default function StartScreen({
 }: StartScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<SignCategory | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
-  const [selectedMode, setSelectedMode] = useState<GameMode>('learn');
+  const [selectedMode, setSelectedMode] = useState<GameMode>('quiz');
   const [gamesOpen, setGamesOpen] = useState(false);
   const gamesEndRef = useRef<HTMLDivElement>(null);
   // The games card sits low on the page: bring the cards it reveals above the sticky start bar
@@ -295,11 +295,15 @@ export default function StartScreen({
     setSelectedDifficulty(value);
   };
 
+  const startReview = () => {
+    if (mistakeCount === 0) return;
+    // No difficulty choice here: review results are not saved and do not count toward unlocking Hard
+    onStart('all', 'medium', TRAFFIC_SIGNS.filter(sg => mistakeIds.includes(sg.id)), { review: true });
+  };
+
   const handleStart = () => {
     if (selectedMode === 'review') {
-      if (mistakeCount === 0) return;
-      // No difficulty choice here: review results are not saved and do not count toward unlocking Hard
-      onStart('all', 'medium', TRAFFIC_SIGNS.filter(sg => mistakeIds.includes(sg.id)), { review: true });
+      startReview();
     } else if (selectedMode === 'quiz') {
       const diff = (hardLocked && selectedDifficulty === 'hard') ? 'medium' : selectedDifficulty;
       const pool = filteredSigns ?? undefined;
@@ -428,23 +432,30 @@ export default function StartScreen({
           <SectionTitle>{t(lang, 'chooseMode')}</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
             {/* Mistakes review only has a slot once there is something to review */}
-            {MODES.filter(m => ['learn', 'exam', 'review', 'quiz'].includes(m.id) && (m.id !== 'review' || mistakeCount > 0)).map(m => (
-              <ModeCard
-                key={m.id}
-                wide
-                icon={m.icon}
-                hue={m.hue}
-                title={t(lang, m.labelKey)}
-                desc={t(lang, m.descKey)}
-                active={selectedMode === m.id}
-                // The exam has no options to choose and an intro screen of its own: open straight away
-                pressed={m.id === 'exam' ? undefined : selectedMode === m.id}
-                corner={m.id === 'exam' ? <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" /> : undefined}
-                badge={m.id === 'review' ? mistakeCount : undefined}
-                fillIcon={m.id === 'quiz'}
-                onClick={() => (m.id === 'exam' ? onStartMode('exam', selectedCategory) : setSelectedMode(m.id))}
-              />
-            ))}
+            {MODES.filter(m => ['learn', 'exam', 'review', 'quiz'].includes(m.id) && (m.id !== 'review' || mistakeCount > 0)).map(m => {
+              // Learn, the exam and the mistakes review have nothing to choose first: open straight away
+              const opensDirectly = m.id !== 'quiz';
+              return (
+                <ModeCard
+                  key={m.id}
+                  wide
+                  icon={m.icon}
+                  hue={m.hue}
+                  title={t(lang, m.labelKey)}
+                  desc={t(lang, m.descKey)}
+                  active={selectedMode === m.id}
+                  pressed={opensDirectly ? undefined : selectedMode === m.id}
+                  corner={opensDirectly ? <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" /> : undefined}
+                  badge={m.id === 'review' ? mistakeCount : undefined}
+                  fillIcon={m.id === 'quiz'}
+                  onClick={() => {
+                    if (m.id === 'review') startReview();
+                    else if (opensDirectly) onStartMode(m.id as 'learn' | 'exam', selectedCategory);
+                    else setSelectedMode(m.id);
+                  }}
+                />
+              );
+            })}
 
             {/* The remaining games share one expandable card */}
             <ModeCard
