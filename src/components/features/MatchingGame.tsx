@@ -46,9 +46,13 @@ function nameSize(name: string): string {
 }
 
 function buildTiles(category: SignCategory | 'all'): Tile[] {
-  let pool = category === 'all' ? TRAFFIC_SIGNS : TRAFFIC_SIGNS.filter(s => s.category === category);
-  if (pool.length < PAIR_COUNT) pool = TRAFFIC_SIGNS;
+  const pool = category === 'all' ? TRAFFIC_SIGNS : TRAFFIC_SIGNS.filter(s => s.category === category);
   const picked = shuffle(pool).slice(0, PAIR_COUNT);
+  // A small category (e.g. 5 plates) still needs 6 pairs: keep all of it, top up with other signs
+  if (picked.length < PAIR_COUNT) {
+    const extra = shuffle(TRAFFIC_SIGNS.filter(s => !picked.includes(s)));
+    picked.push(...extra.slice(0, PAIR_COUNT - picked.length));
+  }
   const make = (sign: TrafficSign, type: Tile['type']): Tile => ({
     id: `${sign.id}-${type}`, signId: sign.id, type, matched: false, selected: false,
   });
