@@ -259,7 +259,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     score: 'النقاط',
     correct: 'صحيح',
     streak: 'تسلسل',
-    exit: 'خروج ←',
+    exit: '→ خروج',
     question: 'ما هذه الإشارة؟',
     correctAnswer: '✓ إجابة صحيحة!',
     wrongAnswer: '✗ خطأ — الإجابة الصحيحة:',
