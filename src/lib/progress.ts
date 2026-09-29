@@ -9,7 +9,7 @@ import { displayStreak, getPlayer, grantXp, levelFromXp } from '@/lib/player';
 import { recordMistake, resolveMistake } from '@/lib/mistakes';
 import { readLang } from '@/lib/prefs';
 
-export type GameMode = 'quiz' | 'review' | 'daily' | 'blitz' | 'memory' | 'match' | 'exam' | 'reveal' | 'odd' | 'collection';
+export type GameMode = 'quiz' | 'review' | 'daily' | 'blitz' | 'memory' | 'match' | 'exam' | 'reveal' | 'odd' | 'collection' | 'twins' | 'classify';
 
 export type GameEvent =
   | { type: 'answer'; signId: string; correct: boolean; streak?: number }
