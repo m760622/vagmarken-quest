@@ -1,14 +1,17 @@
 /**
  * MOCK EXAM — 50 sign questions against a clock, no feedback until the end.
  * Passing needs PASS_PCT% or more. Answers still feed the mistakes list, XP and badges.
+ * Practice mode: the same questions with the verdict after each answer and no time limit.
+ * It counts as a normal quiz for XP and badges, so it cannot earn the exam ones.
  */
-import { useEffect, useState, type CSSProperties } from 'react';
-import { ClipboardCheck, Clock, Home, RotateCcw, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { BookOpen, ClipboardCheck, Clock, Home, RotateCcw, XCircle } from 'lucide-react';
 import { Language, TrafficSign } from '@/types/game';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import AnswerOptions from './AnswerOptions';
+import AnswerName from './AnswerName';
 import Confetti from './Confetti';
 import XpChip from './XpChip';
 import { useFinishGame } from '@/hooks/usePlayer';
@@ -19,6 +22,8 @@ const EXAM_QUESTIONS = 50;
 const EXAM_MINUTES = 25;
 const EXAM_SECONDS = EXAM_MINUTES * 60;
 const PASS_PCT = 80;
+/** How long the tapped answer stays highlighted before the next question (confirms the tap, no verdict). */
+const PICK_FLASH_MS = 250;
 
 interface ExamQuestion { sign: TrafficSign; options: TrafficSign[] }
 type Phase = 'intro' | 'playing' | 'result';
@@ -57,43 +62,57 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(EXAM_SECONDS);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [practice, setPractice] = useState(false);
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === 'ar';
 
   const total = questions.length;
   const correctCount = answers.filter((a, i) => a === questions[i]?.sign.id).length;
   const pct = total ? Math.round((correctCount / total) * 100) : 0;
   const passed = pct >= PASS_PCT;
-  const earned = useFinishGame(phase === 'result', {
-    mode: 'exam',
-    xp: 30 + correctCount * 2 + (passed ? 30 : 0),
-    correct: correctCount,
-    total,
-  });
+  // Practice is reported as a normal quiz, so it never earns the exam pass or its badge
+  const earned = useFinishGame(phase === 'result', practice
+    ? { mode: 'quiz', xp: 10 + correctCount, correct: correctCount, total }
+    : { mode: 'exam', xp: 30 + correctCount * 2 + (passed ? 30 : 0), correct: correctCount, total });
 
-  // Clock: one tick per second while playing; time's up ends the exam
+  // Clock: one tick per second while playing; in the exam, time's up ends it (practice has no limit)
   useEffect(() => {
     if (phase !== 'playing') return;
     const id = setInterval(() => setSecondsLeft(s => s - 1), 1000);
     return () => clearInterval(id);
   }, [phase]);
   useEffect(() => {
-    if (phase === 'playing' && secondsLeft <= 0) setPhase('result');
-  }, [phase, secondsLeft]);
+    if (phase === 'playing' && !practice && secondsLeft <= 0) setPhase('result');
+  }, [phase, practice, secondsLeft]);
 
-  const start = () => {
+  // A pending "next question" must not outlive the screen
+  useEffect(() => () => { if (pickTimer.current) clearTimeout(pickTimer.current); }, []);
+
+  const start = (practiceMode: boolean) => {
     setQuestions(buildExam());
     setIndex(0);
     setAnswers([]);
     setSecondsLeft(EXAM_SECONDS);
+    setPicked(null);
+    setPractice(practiceMode);
     setPhase('playing');
   };
 
-  const choose = (id: string) => {
-    const q = questions[index];
-    recordEvent({ type: 'answer', signId: q.sign.id, correct: id === q.sign.id });
+  const next = (id: string) => {
+    setPicked(null);
     setAnswers(a => [...a, id]);
     if (index + 1 >= questions.length) setPhase('result');
     else setIndex(i => i + 1);
+  };
+
+  const choose = (id: string) => {
+    if (picked !== null) return; // one answer per question
+    const q = questions[index];
+    recordEvent({ type: 'answer', signId: q.sign.id, correct: id === q.sign.id });
+    setPicked(id);
+    // Exam: a short neutral highlight, then on. Practice: stay and show the verdict until "Continue".
+    if (!practice) pickTimer.current = setTimeout(() => next(id), PICK_FLASH_MS);
   };
 
   const nameOf = (s: TrafficSign) => (lang === 'ar' ? s.nameAr : lang === 'en' ? s.nameEn : s.name);
@@ -110,13 +129,21 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
           {t(lang, 'examIntro', { n: Math.min(EXAM_QUESTIONS, TRAFFIC_SIGNS.length), m: EXAM_MINUTES, p: PASS_PCT })}
         </p>
         <button
-          onClick={start}
+          onClick={() => start(false)}
           className="w-full max-w-xs py-4 rounded-2xl btn-hue font-display font-extrabold text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           style={{ '--hue': '84 78% 55%' } as CSSProperties}
         >
           <ClipboardCheck className="w-5 h-5" />
           {t(lang, 'examStart')}
         </button>
+        <button
+          onClick={() => start(true)}
+          className="glass mt-3 w-full max-w-xs py-3.5 rounded-2xl text-[hsl(var(--foreground))] font-display font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <BookOpen className="w-4 h-4" />
+          {t(lang, 'examPractice')}
+        </button>
+        <p className="mt-2 max-w-xs text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">{t(lang, 'examPracticeHint')}</p>
         <button onClick={onHome} className="mt-4 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors flex items-center gap-1">
           <Home className="w-3.5 h-3.5" /> {t(lang, 'home')}
         </button>
@@ -128,7 +155,11 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
   if (phase === 'playing') {
     const q = questions[index];
     if (!q) return null;
-    const low = secondsLeft <= 180;
+    const low = !practice && secondsLeft <= 180;
+    // Exam: time left. Practice: time spent, no limit.
+    const clock = practice ? EXAM_SECONDS - secondsLeft : secondsLeft;
+    const answered = picked !== null;
+    const rightPick = picked === q.sign.id;
     return (
       <div className="min-h-screen flex flex-col" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="px-4 pt-6 pb-3 max-w-2xl mx-auto w-full">
@@ -140,7 +171,7 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
               {t(lang, 'exit')}
             </button>
             <span dir="ltr" className={cn('flex items-center gap-1.5 font-display font-extrabold tabular-nums text-lg', low ? 'text-red-400 animate-pulse' : 'text-[hsl(var(--foreground))]')}>
-              <Clock className="w-4 h-4" /> {mmss(secondsLeft)}
+              <Clock className="w-4 h-4" /> {mmss(clock)}
             </span>
             <span dir="ltr" className="text-xs font-bold tabular-nums text-[hsl(var(--muted-foreground))]">{index + 1} / {total}</span>
           </div>
@@ -153,16 +184,36 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
           <div className="glass p-6 rounded-[32px] my-4">
             <SignDisplay sign={q.sign} size="lg" />
           </div>
+          {practice && answered && (
+            <div className={cn(
+              'mb-3 px-4 py-2 rounded-2xl text-sm font-bold text-center',
+              rightPick ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10',
+            )}>
+              {rightPick
+                ? t(lang, 'correctAnswer')
+                : <>{t(lang, 'wrongAnswer')} <AnswerName sign={q.sign} lang={lang} /></>}
+            </div>
+          )}
           <p className="font-display text-lg font-bold text-[hsl(var(--foreground))] text-center mb-4">{t(lang, 'question')}</p>
           <AnswerOptions
             key={index}
             options={q.options}
             correctId={q.sign.id}
-            selectedId={null}
-            showFeedback={false}
+            selectedId={picked}
+            showFeedback={practice && answered}
             onSelect={choose}
             lang={lang}
           />
+          {practice && answered && (
+            <div className="sticky bottom-3 z-20 w-full max-w-2xl mt-4">
+              <button
+                onClick={() => next(picked)}
+                className="w-full py-3.5 rounded-2xl bg-brand-gradient text-[hsl(var(--primary-foreground))] font-display font-bold shadow-glow hover:brightness-110 active:scale-[0.98] transition-all"
+              >
+                {t(lang, 'continueBtn')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -172,7 +223,8 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
   const missed = questions
     .map((q, i) => ({ q, chosen: answers[i] as string | undefined }))
     .filter(x => x.chosen !== x.q.sign.id);
-  const timeUp = answers.length < total;
+  const timeUp = !practice && answers.length < total;
+  const spent = EXAM_SECONDS - (practice ? secondsLeft : Math.max(0, secondsLeft));
 
   return (
     <div className="min-h-screen px-4 py-8 flex flex-col items-center max-w-2xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -184,7 +236,7 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
         {passed ? '🎓' : '📚'}
       </div>
       <h1 className={cn('font-display text-3xl font-extrabold mb-1', passed ? 'text-brand-gradient' : 'text-[hsl(var(--foreground))]')}>
-        {passed ? t(lang, 'examPassed') : t(lang, 'examFailed')}
+        {practice ? t(lang, 'practiceDone') : passed ? t(lang, 'examPassed') : t(lang, 'examFailed')}
       </h1>
       {timeUp && <p className="text-sm text-amber-400 font-semibold">{t(lang, 'examTimeUp')}</p>}
       <div className="mt-2 mb-1"><XpChip earned={earned} lang={lang} /></div>
@@ -199,7 +251,7 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
           <span className="text-xs text-[hsl(var(--muted-foreground))]">{t(lang, 'examPassMark', { p: PASS_PCT })}</span>
         </div>
         <div className="glass flex flex-col items-center p-4 rounded-2xl">
-          <span dir="ltr" className="font-display text-2xl font-extrabold text-[hsl(var(--foreground))]">{mmss(EXAM_SECONDS - Math.max(0, secondsLeft))}</span>
+          <span dir="ltr" className="font-display text-2xl font-extrabold text-[hsl(var(--foreground))]">{mmss(spent)}</span>
           <span className="text-xs text-[hsl(var(--muted-foreground))]">{t(lang, 'time')}</span>
         </div>
       </div>
@@ -236,7 +288,7 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
         <button onClick={onHome} className="glass flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[hsl(var(--foreground))] font-display font-bold active:scale-[0.98] transition-all">
           <Home className="w-4 h-4" /> {t(lang, 'home')}
         </button>
-        <button onClick={start} className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-brand-gradient text-[hsl(var(--primary-foreground))] font-display font-bold shadow-glow hover:brightness-110 active:scale-[0.98] transition-all">
+        <button onClick={() => start(practice)} className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-brand-gradient text-[hsl(var(--primary-foreground))] font-display font-bold shadow-glow hover:brightness-110 active:scale-[0.98] transition-all">
           <RotateCcw className="w-4 h-4" /> {t(lang, 'playAgain')}
         </button>
       </div>
