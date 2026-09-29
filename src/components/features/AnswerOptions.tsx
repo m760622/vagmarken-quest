@@ -46,7 +46,9 @@ export default function AnswerOptions({ options, correctId, selectedId, showFeed
               isRemoved && 'opacity-0 scale-90 pointer-events-none',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]',
               'min-h-[72px]',
-              !showFeedback && 'glass hover:border-[hsl(var(--option-hover-border))] hover:shadow-[0_10px_28px_-14px_hsl(var(--brand)/0.7)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer',
+              !showFeedback && !isSelected && 'glass hover:border-[hsl(var(--option-hover-border))] hover:shadow-[0_10px_28px_-14px_hsl(var(--brand)/0.7)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer',
+              // Picked, no verdict shown (mock exam): a neutral highlight that does not reveal right or wrong
+              !showFeedback && isSelected && 'border-[hsl(var(--brand))] bg-[hsl(var(--brand))]/15 scale-[0.98] duration-100',
               isRight && 'border-emerald-500 bg-emerald-500/10 scale-[1.02]',
               isWrong && 'border-red-500 bg-red-500/10',
               showFeedback && !isSelected && !isCorrect && 'opacity-40 glass',

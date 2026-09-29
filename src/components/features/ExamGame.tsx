@@ -2,7 +2,7 @@
  * MOCK EXAM — 50 sign questions against a clock, no feedback until the end.
  * Passing needs PASS_PCT% or more. Answers still feed the mistakes list, XP and badges.
  */
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ClipboardCheck, Clock, Home, RotateCcw, XCircle } from 'lucide-react';
 import { Language, TrafficSign } from '@/types/game';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
@@ -19,6 +19,8 @@ const EXAM_QUESTIONS = 50;
 const EXAM_MINUTES = 25;
 const EXAM_SECONDS = EXAM_MINUTES * 60;
 const PASS_PCT = 80;
+/** How long the tapped answer stays highlighted before the next question (confirms the tap, no verdict). */
+const PICK_FLASH_MS = 250;
 
 interface ExamQuestion { sign: TrafficSign; options: TrafficSign[] }
 type Phase = 'intro' | 'playing' | 'result';
@@ -57,6 +59,8 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(EXAM_SECONDS);
+  const [picked, setPicked] = useState<string | null>(null);
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = lang === 'ar';
 
   const total = questions.length;
@@ -80,20 +84,29 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
     if (phase === 'playing' && secondsLeft <= 0) setPhase('result');
   }, [phase, secondsLeft]);
 
+  // A pending "next question" must not outlive the screen
+  useEffect(() => () => { if (pickTimer.current) clearTimeout(pickTimer.current); }, []);
+
   const start = () => {
     setQuestions(buildExam());
     setIndex(0);
     setAnswers([]);
     setSecondsLeft(EXAM_SECONDS);
+    setPicked(null);
     setPhase('playing');
   };
 
   const choose = (id: string) => {
+    if (picked !== null) return; // one answer per question
     const q = questions[index];
     recordEvent({ type: 'answer', signId: q.sign.id, correct: id === q.sign.id });
-    setAnswers(a => [...a, id]);
-    if (index + 1 >= questions.length) setPhase('result');
-    else setIndex(i => i + 1);
+    setPicked(id);
+    pickTimer.current = setTimeout(() => {
+      setPicked(null);
+      setAnswers(a => [...a, id]);
+      if (index + 1 >= questions.length) setPhase('result');
+      else setIndex(i => i + 1);
+    }, PICK_FLASH_MS);
   };
 
   const nameOf = (s: TrafficSign) => (lang === 'ar' ? s.nameAr : lang === 'en' ? s.nameEn : s.name);
@@ -158,7 +171,7 @@ export default function ExamGame({ lang, onHome }: ExamGameProps) {
             key={index}
             options={q.options}
             correctId={q.sign.id}
-            selectedId={null}
+            selectedId={picked}
             showFeedback={false}
             onSelect={choose}
             lang={lang}
