@@ -125,7 +125,7 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
         ? `Vägmärken Quest — Daglig utmaning ${dateKey}\n${emojiRow}\n${correctCount}/${DAILY_QUESTIONS} rätt`
         : lang === 'en'
         ? `Vägmärken Quest — Daily Challenge ${dateKey}\n${emojiRow}\n${correctCount}/${DAILY_QUESTIONS} correct`
-        : `مسابقة اللافتات — التحدي اليومي ${dateKey}\n${emojiRow}\n${correctCount}/${DAILY_QUESTIONS} صحيح`;
+        : `إشارات المرور — التحدي اليومي ${dateKey}\n${emojiRow}\n${correctCount}/${DAILY_QUESTIONS} صحيح`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
