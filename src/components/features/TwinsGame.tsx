@@ -3,17 +3,21 @@
  * The name of a sign is shown; pick the right sign among look-alikes (same shape and colour).
  * First two signs to choose from, later three. 10 rounds against the clock. After each answer
  * the right sign and, when it was mixed up, the one that was picked are explained side by side.
+ * The rounds are built from the player's own record: about six targets are signs they got wrong,
+ * and the signs they really mixed up with a target are offered next to it (such rounds are marked).
  */
 
 import { TRAFFIC_SIGNS } from '@/constants/signs';
-import { Language, SignCategory } from '@/types/game';
+import { Language, SignCategory, TrafficSign } from '@/types/game';
 import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
-import { Columns2 } from 'lucide-react';
+import { Columns2, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRoundGame } from '@/hooks/useRoundGame';
 import { useRoundScroll } from '@/hooks/useRoundScroll';
 import { buildTwinRounds, type TwinRound } from '@/lib/gameLogic';
+import { getMistakes } from '@/lib/mistakes';
+import { getConfusions } from '@/lib/confusions';
 import { signDescription, signName, signNameSecondary } from '@/lib/signName';
 import { l3 } from '@/lib/l3';
 import SpeakButton from './SpeakButton';
@@ -39,11 +43,13 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
     roundMs: ROUND_MS,
     muted,
     advanceMs: 2200,
-    build: () => buildTwinRounds(TRAFFIC_SIGNS, category, TOTAL_ROUNDS),
+    build: () => buildTwinRounds(TRAFFIC_SIGNS, category, TOTAL_ROUNDS, Math.random, undefined, { mistakes: getMistakes(), confusions: getConfusions() }),
     signIdOf: r => r.target.id,
   });
   const feedbackRef = useRoundScroll(g.phase === 'playing', g.index, g.answered);
   const title = t(lang, 'modeTwins');
+  // Whether the game has anything to base rounds on (read again each time the intro is shown)
+  const hasRecord = g.phase === 'intro' && (Object.keys(getMistakes()).length > 0 || Object.keys(getConfusions()).length > 0);
 
   if (g.phase === 'intro') {
     const sample = ['A1', 'A2', 'A3'].map(id => TRAFFIC_SIGNS.find(s => s.id === id)).filter((s): s is NonNullable<typeof s> => !!s);
@@ -59,7 +65,8 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
           'Läs namnet och välj rätt skylt bland liknande. Först två att välja på, sedan tre.',
           'اقرأ الاسم ثم اختر الإشارة الصحيحة من بين إشارات متشابهة. في البداية اثنتان ثم ثلاث.',
         )}
-        meta={L('10 rounds · 12 seconds each', '10 rundor · 12 sekunder var', '10 جولات · 12 ثانية لكل جولة')}
+        meta={L('10 rounds · 12 seconds each', '10 rundor · 12 sekunder var', '10 جولات · 12 ثانية لكل جولة')
+          + (hasRecord ? L(' · some from your mistakes', ' · en del från dina misstag', ' · بعضها من أخطائك') : '')}
         sample={sample}
         onStart={g.start}
         onHome={onHome}
@@ -100,6 +107,14 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
   const secondary = signNameSecondary(target, lang);
   const last = g.index + 1 >= g.total;
 
+  // Say which sign was picked instead, or which signs were on screen, so the mix-up can be recorded
+  const choose = (sign: TrafficSign) => {
+    const correct = sign.id === target.id;
+    g.answer(sign.id, correct, correct
+      ? { otherIds: options.filter(o => o.id !== target.id).map(o => o.id) }
+      : { pickedId: sign.id });
+  };
+
   return (
     <div className="min-h-screen flex flex-col" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <RoundHeader
@@ -119,6 +134,14 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
       />
 
       <div className="px-4 max-w-lg mx-auto w-full">
+        {round.personal && (
+          <p className="flex justify-center mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-display font-extrabold" style={{ background: 'hsl(186 90% 50% / 0.14)', color: ACCENT }}>
+              <Target className="w-3.5 h-3.5" aria-hidden="true" />
+              {L('From your mistakes', 'Från dina misstag', 'من أخطائك')}
+            </span>
+          </p>
+        )}
         <p className="text-center text-sm font-display font-bold text-[hsl(var(--muted-foreground))] mb-2">
           {L('Which of these is…', 'Vilken av dessa är…', 'أيّ هذه الإشارات هي…')}
         </p>
@@ -134,7 +157,7 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
             return (
               <button
                 key={sign.id}
-                onClick={() => g.answer(sign.id, isTarget)}
+                onClick={() => choose(sign)}
                 disabled={g.answered}
                 // Names would give the answer away to a screen reader: only after answering
                 aria-label={g.answered
