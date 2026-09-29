@@ -9,7 +9,7 @@ import { displayStreak, getPlayer, grantXp, levelFromXp } from '@/lib/player';
 import { recordMistake, resolveMistake } from '@/lib/mistakes';
 import { readLang } from '@/lib/prefs';
 
-export type GameMode = 'quiz' | 'review' | 'daily' | 'blitz' | 'memory' | 'match';
+export type GameMode = 'quiz' | 'review' | 'daily' | 'blitz' | 'memory' | 'match' | 'exam';
 
 export type GameEvent =
   | { type: 'answer'; signId: string; correct: boolean; streak?: number }
@@ -70,6 +70,9 @@ export const BADGES: BadgeDef[] = [
   { id: 'fixer', icon: '🛠️', target: 5, value: c => c.stats.fixed,
     name: { en: 'Mistake fixer', sv: 'Felrättare', ar: 'مصحّح الأخطاء' },
     desc: { en: 'Fully fix 5 signs you got wrong', sv: 'Rätta till 5 skyltar du missat', ar: 'أتقن 5 لافتات كنت تخطئ فيها' } },
+  { id: 'exam_pass', icon: '📝', target: 1, value: c => c.stats.examPassed,
+    name: { en: 'Exam ready', sv: 'Provklar', ar: 'جاهز للامتحان' },
+    desc: { en: 'Pass a mock exam (80%+)', sv: 'Klara ett övningsprov (80 %+)', ar: 'انجح في امتحان تجريبي (80% فأكثر)' } },
   { id: 'day3', icon: '📅', target: 3, value: c => c.dayStreak,
     name: { en: '3-day streak', sv: '3 dagar i rad', ar: '3 أيام متتالية' },
     desc: { en: 'Play 3 days in a row', sv: 'Spela 3 dagar i rad', ar: 'العب 3 أيام متتالية' } },
@@ -99,6 +102,7 @@ interface Stats {
   perfectQuiz: number;
   bestMatchSeconds: number | null;
   bestBlitzPct: number;
+  examPassed: number;
 }
 
 export interface MissionState { id: string; progress: number; done: boolean }
@@ -132,7 +136,7 @@ function pickMissions(date: string): MissionState[] {
 
 const emptyStats = (): Stats => ({
   games: 0, correct: 0, answered: 0, bestStreak: 0, modes: [], solved: [], fixed: 0,
-  perfectQuiz: 0, bestMatchSeconds: null, bestBlitzPct: 0,
+  perfectQuiz: 0, bestMatchSeconds: null, bestBlitzPct: 0, examPassed: 0,
 });
 
 function fresh(): ProgressState {
@@ -226,6 +230,7 @@ export function recordEvent(e: GameEvent): void {
     }
     if ((e.mode === 'quiz' || e.mode === 'review') && pct >= 0.8) bump('quiz80', c => c + 1);
     if (e.mode === 'quiz' && e.total && e.total >= 5 && e.correct === e.total) stats.perfectQuiz = 1;
+    if (e.mode === 'exam' && e.total && e.total >= 10 && pct >= 0.8) stats.examPassed = 1;
     if (e.mode === 'blitz' && e.total && e.total >= 10) stats.bestBlitzPct = Math.max(stats.bestBlitzPct, Math.round(pct * 100));
   }
 

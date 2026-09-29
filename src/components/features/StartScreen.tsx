@@ -7,7 +7,7 @@ import BadgesPanel from './BadgesPanel';
 import SignDisplay from './SignDisplay';
 import {
   Play, Languages, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Sun, Moon,
-  ShieldCheck, LayoutGrid, Check, History, type LucideIcon,
+  ShieldCheck, LayoutGrid, Check, History, ClipboardCheck, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,7 @@ import { useMistakes } from '@/hooks/useProgress';
 import { usePlayer } from '@/hooks/usePlayer';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam';
 
 interface ProgressionInfo {
   hardUnlocked: boolean;
@@ -26,7 +26,7 @@ interface ProgressionInfo {
 
 interface StartScreenProps {
   onStart: (category: SignCategory | 'all', difficulty: Difficulty, signPool?: TrafficSign[], options?: { review?: boolean }) => void;
-  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily', category: SignCategory | 'all') => void;
+  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam', category: SignCategory | 'all') => void;
   scores: HighScore[];
   onClearScores: () => void;
   lang: Language;
@@ -46,6 +46,7 @@ const CATEGORY_HUE: Record<SignCategory | 'all', string> = {
 
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
   { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
+  { id: 'exam',   icon: ClipboardCheck, labelKey: 'modeExam', descKey: 'modeExamDesc', hue: '84 78% 55%' },
   { id: 'daily',  icon: Calendar, labelKey: 'modeDaily',  descKey: 'modeDailyDesc',  hue: '32 96% 58%' },
   { id: 'blitz',  icon: Zap,      labelKey: 'modeBlitz',  descKey: 'modeBlitzDesc',  hue: '52 98% 56%' },
   { id: 'memory', icon: Brain,    labelKey: 'modeMemory', descKey: 'modeMemoryDesc', hue: '266 90% 70%' },
@@ -262,6 +263,7 @@ export default function StartScreen({
   const startLabel =
     selectedMode === 'quiz'   ? t(lang, 'startQuiz') :
     selectedMode === 'review' ? t(lang, 'modeReview') :
+    selectedMode === 'exam'   ? t(lang, 'modeExam') :
     selectedMode === 'daily'  ? t(lang, 'modeDaily') :
     selectedMode === 'blitz'  ? t(lang, 'modeBlitz') :
     selectedMode === 'memory' ? t(lang, 'modeMemory') :
@@ -370,7 +372,7 @@ export default function StartScreen({
               const isActive = selectedMode === m.id;
               const Icon = m.icon;
               const isQuiz = m.id === 'quiz';
-              const isWide = isQuiz;
+              const isWide = isQuiz || m.id === 'exam';
               return (
                 <button
                   key={m.id}
@@ -424,7 +426,7 @@ export default function StartScreen({
         </section>
 
         {/* Search */}
-        {selectedMode !== 'review' && (
+        {selectedMode !== 'review' && selectedMode !== 'exam' && (
         <section className="rise-in" style={{ '--rise-delay': '0.22s' } as CSSProperties}>
           <div className="relative">
             <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--muted-foreground))] pointer-events-none" />
@@ -468,7 +470,7 @@ export default function StartScreen({
         )}
 
         {/* Category */}
-        {selectedMode !== 'review' && (
+        {selectedMode !== 'review' && selectedMode !== 'exam' && (
         <section className="rise-in" style={{ '--rise-delay': '0.28s' } as CSSProperties}>
           <SectionTitle>{t(lang, 'chooseCategory')}</SectionTitle>
           <div className="grid grid-cols-2 gap-2.5">

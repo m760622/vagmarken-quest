@@ -11,6 +11,7 @@ import LearnMode from './LearnMode';
 import BlitzGame from './BlitzGame';
 import MemoryGame from './MemoryGame';
 import DailyChallenge from './DailyChallenge';
+import ExamGame from './ExamGame';
 import ScoreBar from './ScoreBar';
 import SignDisplay from './SignDisplay';
 import AnswerOptions from './AnswerOptions';
@@ -68,7 +69,7 @@ function TimerArc({ timeLeft, total }: { timeLeft: number; total: number }) {
   );
 }
 
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam';
 
 export default function QuizGame() {
   const { muted, toggleMute } = useMute();
@@ -87,6 +88,9 @@ export default function QuizGame() {
 
   if (mode === 'daily') {
     return <DailyChallenge lang={lang} onHome={() => setMode('quiz')} />;
+  }
+  if (mode === 'exam') {
+    return <ExamGame lang={lang} onHome={() => setMode('quiz')} />;
   }
   if (mode === 'blitz') {
     return <BlitzGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
