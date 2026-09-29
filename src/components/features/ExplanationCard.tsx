@@ -52,7 +52,7 @@ export default function ExplanationCard({ sign, isCorrect, timedOut, lang }: Exp
           </div>
           <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">{description}</p>
           {lang === 'ar' && (
-            <p dir="ltr" className="text-[10px] text-[hsl(var(--muted-foreground))]/70 mt-1 italic">{sign.name}</p>
+            <p dir="ltr" className="text-[10px] text-[hsl(var(--muted-foreground))]/70 mt-1 italic text-end">{sign.name}</p>
           )}
           {lang === 'en' && sign.nameEn && (
             <p className="text-[10px] text-[hsl(var(--muted-foreground))]/60 mt-1 italic">{sign.nameEn}</p>

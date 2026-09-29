@@ -11,7 +11,7 @@ import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import { Home, Calendar, Share2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { nameWithAr } from '@/lib/signNames';
+import AnswerName from './AnswerName';
 import Confetti from './Confetti';
 import XpChip from './XpChip';
 import { useFinishGame } from '@/hooks/usePlayer';
@@ -302,7 +302,7 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
           )}>
             {selected === q.sign.id
               ? t(lang, 'correctAnswer')
-              : `${t(lang, 'wrongAnswer')} ${nameWithAr(q.sign, lang)}`}
+              : <>{t(lang, 'wrongAnswer')} <AnswerName sign={q.sign} lang={lang} /></>}
           </div>
         )}
 
@@ -320,7 +320,7 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
                 onClick={() => handleAnswer(opt.id)}
                 disabled={showFeedback}
                 className={cn(
-                  'p-3 rounded-2xl border-2 text-left transition-all text-sm font-semibold leading-snug min-h-[44px]',
+                  'p-3 rounded-2xl border-2 text-start transition-all text-sm font-semibold leading-snug min-h-[44px]',
                   !showFeedback && 'border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] hover:border-[hsl(var(--brand))]/60 hover:bg-[hsl(var(--brand))]/5 active:scale-[0.98]',
                   showFeedback && isCorrect && 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300',
                   showFeedback && isSelected && !isCorrect && 'border-red-500/50 bg-red-500/10 text-red-300',
@@ -331,7 +331,7 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
                 {lang === 'ar' ? (
                   <>
                     {opt.nameAr}
-                    <span dir="ltr" className="block text-[11px] font-normal text-[hsl(var(--muted-foreground))] mt-0.5">{opt.name}</span>
+                    <span dir="ltr" className="block text-end text-[11px] font-normal text-[hsl(var(--muted-foreground))] mt-0.5">{opt.name}</span>
                   </>
                 ) : opt.name}
               </button>

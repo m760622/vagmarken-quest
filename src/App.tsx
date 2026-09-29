@@ -7,8 +7,15 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useImagePreloader } from "@/hooks/useImagePreloader";
 import LevelUpOverlay from "@/components/features/LevelUpOverlay";
+import { useLang } from "@/hooks/useLang";
 
 const queryClient = new QueryClient();
+
+// Toasts render outside the per-screen dir wrappers, so mirror them for Arabic here
+function LangToaster() {
+  const { lang } = useLang();
+  return <Sonner position="top-center" className={lang === 'ar' ? 'toaster group toaster-rtl' : 'toaster group'} />;
+}
 
 function AppInner() {
   useImagePreloader();
@@ -28,7 +35,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner position="top-center" />
+      <LangToaster />
       <AppInner />
     </TooltipProvider>
   </QueryClientProvider>

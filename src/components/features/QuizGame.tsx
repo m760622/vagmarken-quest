@@ -21,7 +21,7 @@ import { SignCategory } from '@/types/game';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import { getMistakes } from '@/lib/mistakes';
 import { cn } from '@/lib/utils';
-import { nameWithAr } from '@/lib/signNames';
+import AnswerName from './AnswerName';
 
 const ARC_SIZE      = 64;
 const RADIUS        = 27;
@@ -93,10 +93,10 @@ export default function QuizGame() {
     return <ExamGame lang={lang} onHome={() => setMode('quiz')} />;
   }
   if (mode === 'blitz') {
-    return <BlitzGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+    return <BlitzGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
   if (mode === 'memory') {
-    return <MemoryGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+    return <MemoryGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
   if (mode === 'match') {
     return <MatchingGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} />;
@@ -122,6 +122,8 @@ export default function QuizGame() {
         lang={lang}
         onLangChange={setLang}
         progression={progression}
+        muted={muted}
+        onToggleMute={toggleMute}
       />
     );
   }
@@ -246,9 +248,7 @@ export default function QuizGame() {
             )}>
               {isCorrect
                 ? t(lang, 'correctAnswer')
-                : timedOut
-                ? `${t(lang, 'timeUp')} ${t(lang, 'wrongAnswer')} ${nameWithAr(currentQuestion.sign, lang)}`
-                : `${t(lang, 'wrongAnswer')} ${nameWithAr(currentQuestion.sign, lang)}`}
+                : <>{timedOut && `${t(lang, 'timeUp')} `}{t(lang, 'wrongAnswer')} <AnswerName sign={currentQuestion.sign} lang={lang} /></>}
             </div>
           )}
 

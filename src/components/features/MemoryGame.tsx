@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
-import { Language, TrafficSign } from '@/types/game';
+import { Language, TrafficSign, SignCategory } from '@/types/game';
 import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import { Home, Brain, Timer } from 'lucide-react';
@@ -35,8 +35,14 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildCards(): MemoryCard[] {
-  const selected = shuffle([...TRAFFIC_SIGNS]).slice(0, PAIR_COUNT);
+function buildCards(category: SignCategory | 'all'): MemoryCard[] {
+  const pool = category === 'all' ? TRAFFIC_SIGNS : TRAFFIC_SIGNS.filter(s => s.category === category);
+  const selected = shuffle(pool).slice(0, PAIR_COUNT);
+  // A small category (e.g. 5 plates) still needs 8 pairs: keep all of it, top up with other signs
+  if (selected.length < PAIR_COUNT) {
+    const extra = shuffle(TRAFFIC_SIGNS.filter(s => !selected.includes(s)));
+    selected.push(...extra.slice(0, PAIR_COUNT - selected.length));
+  }
   const cards: MemoryCard[] = [];
   selected.forEach(sign => {
     cards.push({ id: `${sign.id}-sign`, signId: sign.id, type: 'sign', sign });
@@ -47,6 +53,7 @@ function buildCards(): MemoryCard[] {
 
 interface MemoryGameProps {
   lang: Language;
+  category: SignCategory | 'all';
   onHome: () => void;
   muted?: boolean;
   onToggleMute?: () => void;
@@ -54,7 +61,7 @@ interface MemoryGameProps {
 
 type GamePhase = 'intro' | 'playing' | 'result';
 
-export default function MemoryGame({ lang, onHome, muted = false, onToggleMute }: MemoryGameProps) {
+export default function MemoryGame({ lang, category, onHome, muted = false, onToggleMute }: MemoryGameProps) {
   const [phase, setPhase]         = useState<GamePhase>('intro');
   const [cards, setCards]         = useState<MemoryCard[]>([]);
   const [flipped, setFlipped]     = useState<string[]>([]);   // up to 2 card ids
@@ -74,7 +81,7 @@ export default function MemoryGame({ lang, onHome, muted = false, onToggleMute }
   }, []);
 
   const startGame = useCallback(() => {
-    setCards(buildCards());
+    setCards(buildCards(category));
     setFlipped([]);
     setMatched([]);
     setMoves(0);
@@ -82,7 +89,7 @@ export default function MemoryGame({ lang, onHome, muted = false, onToggleMute }
     setLocked(false);
     setPhase('playing');
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
-  }, []);
+  }, [category]);
 
   useEffect(() => () => stopTimer(), [stopTimer]);
 

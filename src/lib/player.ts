@@ -24,7 +24,7 @@ export interface Rank {
 export const RANKS: Rank[] = [
   { minLevel: 1,  icon: '🚶', names: { en: 'Pedestrian',   sv: 'Fotgängare',      ar: 'مشاة' } },
   { minLevel: 3,  icon: '🚲', names: { en: 'Cyclist',      sv: 'Cyklist',         ar: 'راكب دراجة' } },
-  { minLevel: 5,  icon: '🛵', names: { en: 'Moped rider',  sv: 'Mopedist',        ar: 'سائق دراجة نارية' } },
+  { minLevel: 5,  icon: '🛵', names: { en: 'Moped rider',  sv: 'Mopedist',        ar: 'سائق موبيد' } },
   { minLevel: 8,  icon: '🚗', names: { en: 'Driver',       sv: 'Bilförare',       ar: 'سائق' } },
   { minLevel: 12, icon: '🚚', names: { en: 'Trucker',      sv: 'Lastbilschaufför', ar: 'سائق شاحنة' } },
   { minLevel: 17, icon: '🏁', names: { en: 'Road pro',     sv: 'Trafikproffs',    ar: 'محترف الطرق' } },

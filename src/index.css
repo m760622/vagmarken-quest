@@ -197,6 +197,12 @@
     backdrop-filter: blur(16px) saturate(140%);
   }
 
+  /* Toasts render outside the per-screen dir wrappers; mirror their content for Arabic
+     without touching the toaster's own centring */
+  .toaster-rtl [data-sonner-toast] {
+    direction: rtl;
+  }
+
   /* Brand gradients */
   .bg-brand-gradient {
     background-image: linear-gradient(135deg, hsl(var(--brand-light)) 0%, hsl(var(--brand)) 45%, hsl(190 90% 52%) 100%);

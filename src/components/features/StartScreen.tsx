@@ -1,20 +1,22 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { SignCategory, Language, HighScore, TrafficSign } from '@/types/game';
 import { CATEGORY_LABELS_I18N, t } from '@/constants/i18n';
-import HighScorePanel from './HighScorePanel';
-import PlayerCard from './PlayerCard';
-import BadgesPanel from './BadgesPanel';
+import MenuScreen from './MenuScreen';
+import CategorySheet from './CategorySheet';
+import { CategoryIcon } from './CategoryIcon';
+import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
-  Play, Languages, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Sun, Moon,
-  ShieldCheck, LayoutGrid, Check, History, ClipboardCheck, type LucideIcon,
+  Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
+  ShieldCheck, ChevronUp, Check, History, ClipboardCheck, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { UNLOCK_THRESHOLD } from '@/hooks/useProgression';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
-import { useMistakes } from '@/hooks/useProgress';
+import { useMistakes, useProgress } from '@/hooks/useProgress';
 import { usePlayer } from '@/hooks/usePlayer';
+import { displayStreak, streakAtRisk } from '@/lib/player';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam';
@@ -32,18 +34,9 @@ interface StartScreenProps {
   lang: Language;
   onLangChange: (lang: Language) => void;
   progression: ProgressionInfo;
+  muted: boolean;
+  onToggleMute: () => void;
 }
-
-/* ── Accent colours (HSL triples so they can take an alpha) ───────── */
-const CATEGORY_HUE: Record<SignCategory | 'all', string> = {
-  all: 'var(--brand)',
-  warning: '38 95% 56%',
-  prohibition: '0 84% 62%',
-  mandatory: '217 91% 64%',
-  priority: '48 96% 55%',
-  information: '199 92% 58%',
-  additional: '250 70% 72%',
-};
 
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
   { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
@@ -67,59 +60,6 @@ const findSign = (id: string) => TRAFFIC_SIGNS.find(s => s.id === id);
 const HERO_LEFT = findSign('A15');
 const HERO_CENTER = findSign('B2');
 const HERO_RIGHT = findSign('C31');
-
-/* ── Category icon: the actual shape/colour of that sign family ───── */
-function CategoryIcon({ category, className }: { category: SignCategory | 'all'; className?: string }) {
-  const common = { viewBox: '0 0 24 24', className, 'aria-hidden': true } as const;
-  switch (category) {
-    case 'warning':
-      return (
-        <svg {...common}>
-          <path d="M12 3.2 21.4 19.8H2.6Z" fill="#fff" stroke="#E11D48" strokeWidth="2.6" strokeLinejoin="round" />
-          <rect x="11.1" y="9" width="1.8" height="5.4" rx=".9" fill="#111827" />
-          <circle cx="12" cy="16.6" r="1.1" fill="#111827" />
-        </svg>
-      );
-    case 'prohibition':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8.6" fill="#fff" stroke="#E11D48" strokeWidth="3" />
-          <path d="M6.6 17.4 17.4 6.6" stroke="#E11D48" strokeWidth="2.4" strokeLinecap="round" />
-        </svg>
-      );
-    case 'mandatory':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="10" fill="#1D4ED8" />
-          <path d="M12 17V8m0 0-3.6 3.6M12 8l3.6 3.6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </svg>
-      );
-    case 'priority':
-      return (
-        <svg {...common}>
-          <rect x="5.2" y="5.2" width="13.6" height="13.6" rx="2.2" transform="rotate(45 12 12)" fill="#fff" stroke="#111827" strokeWidth="1.2" />
-          <rect x="7.4" y="7.4" width="9.2" height="9.2" rx="1.4" transform="rotate(45 12 12)" fill="#FBBF24" />
-        </svg>
-      );
-    case 'additional':
-      return (
-        <svg {...common}>
-          <rect x="3" y="7" width="18" height="10" rx="2" fill="#fff" stroke="#111827" strokeWidth="1.6" />
-          <rect x="6.5" y="11" width="11" height="2" rx="1" fill="#111827" />
-        </svg>
-      );
-    case 'information':
-      return (
-        <svg {...common}>
-          <rect x="3" y="3" width="18" height="18" rx="4" fill="#1D4ED8" />
-          <rect x="11.1" y="10.6" width="1.8" height="6" rx=".9" fill="#fff" />
-          <circle cx="12" cy="7.9" r="1.2" fill="#fff" />
-        </svg>
-      );
-    default:
-      return <LayoutGrid className={className} />;
-  }
-}
 
 /* ── Night-road hero stage ───────────────────────────────────────── */
 function RoadStage({ compact }: { compact: boolean }) {
@@ -195,7 +135,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 export default function StartScreen({
-  onStart, onStartMode, scores, onClearScores, lang, onLangChange, progression,
+  onStart, onStartMode, scores, onClearScores, lang, onLangChange, progression, muted, onToggleMute,
 }: StartScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<SignCategory | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
@@ -204,6 +144,12 @@ export default function StartScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const { theme, toggleTheme } = useTheme();
   const { player } = usePlayer();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const { missions } = useProgress();
+  const missionsDone = missions.filter(m => m.done).length;
+  const streak = displayStreak(player);
+  const streakWarning = streak > 0 && streakAtRisk(player);
   // After the first finished game the hero shrinks so the modes are reachable right away
   const compact = player.gamesPlayed > 0;
   const { ids: mistakeIds, count: mistakeCount } = useMistakes();
@@ -229,20 +175,16 @@ export default function StartScreen({
     { value: 'hard',   label: t(lang, 'diffHard'),   desc: t(lang, 'ptsHard'),   locked: hardLocked },
   ];
 
-  const categories = (Object.keys(CATEGORY_HUE) as Array<SignCategory | 'all'>).map(value => ({
-    value,
-    label: CATEGORY_LABELS_I18N[lang][value],
-  }));
-
   const statLabel =
     lang === 'ar' ? `${TRAFFIC_SIGNS.length} إشارة` :
     lang === 'sv' ? `${TRAFFIC_SIGNS.length} skyltar` :
     `${TRAFFIC_SIGNS.length} Signs`;
 
+  const categoryCount = new Set(TRAFFIC_SIGNS.map(s => s.category)).size;
   const categoryCountLabel =
-    lang === 'ar' ? '٥ فئات' :
-    lang === 'sv' ? '5 kategorier' :
-    '5 Categories';
+    lang === 'ar' ? `${categoryCount.toLocaleString('ar-EG')} فئات` :
+    lang === 'sv' ? `${categoryCount} kategorier` :
+    `${categoryCount} Categories`;
 
   const handleDifficultyClick = (value: Difficulty, locked: boolean) => {
     if (locked) {
@@ -268,6 +210,8 @@ export default function StartScreen({
   };
 
   const activeMode = MODES.find(m => m.id === selectedMode) ?? MODES[0];
+  // Daily, the mock exam and the mistakes review have their own fixed set of signs
+  const usesCategory = selectedMode !== 'review' && selectedMode !== 'exam' && selectedMode !== 'daily';
   const startLabel =
     selectedMode === 'quiz'   ? t(lang, 'startQuiz') :
     selectedMode === 'review' ? t(lang, 'modeReview') :
@@ -284,27 +228,34 @@ export default function StartScreen({
     <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <header className="relative">
-        {/* Top bar: brand mark + controls, in flow so nothing overlaps on phones */}
-        <div className="relative z-20 flex items-center justify-between gap-3 px-4 pt-4 max-w-2xl mx-auto w-full" dir="ltr">
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-brand-gradient grid place-items-center shadow-glow">
+        {/* Top bar: brand mark, menu chip and language, in flow so nothing overlaps on phones */}
+        <div className="relative z-20 flex items-center justify-between gap-2 px-4 pt-4 max-w-2xl mx-auto w-full" dir="ltr">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-9 h-9 rounded-xl bg-brand-gradient grid place-items-center shadow-glow shrink-0">
               <ShieldCheck className="w-[18px] h-[18px] text-[hsl(var(--primary-foreground))]" />
             </span>
-            <span className="font-display text-sm font-bold text-[hsl(var(--foreground))] hidden min-[380px]:block">
-              Vägmärken
-            </span>
+            {/* Menu chip: opens the progress / records / settings screen, with the key numbers visible */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label={t(lang, 'menu')}
+              className="glass relative rounded-2xl h-10 px-3 flex items-center gap-3 text-[hsl(var(--foreground))] transition-all active:scale-[0.97]"
+            >
+              <Menu className="w-[18px] h-[18px]" />
+              <span className={cn('flex items-center gap-1 text-xs font-extrabold tabular-nums', streak > 0 ? 'text-orange-400' : 'text-[hsl(var(--muted-foreground))]')}>
+                <Flame className={cn('w-4 h-4', streak > 0 && 'fill-orange-400/40')} />
+                {streak}
+              </span>
+              <span className={cn('flex items-center gap-1 text-xs font-extrabold tabular-nums', missionsDone === missions.length && missions.length > 0 ? 'text-emerald-400' : 'text-[hsl(var(--brand-light))]')}>
+                <ListChecks className="w-4 h-4" />
+                {missionsDone}/{missions.length}
+              </span>
+              {streakWarning && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </button>
           </div>
 
           <div className="glass rounded-2xl p-1 flex items-center gap-0.5">
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-white/10 transition-colors"
-              aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <span className="w-px h-5 bg-[hsl(var(--foreground))]/15 mx-0.5" />
-            <Languages className="w-3.5 h-3.5 mx-1 text-[hsl(var(--muted-foreground))]" />
             {(['en', 'sv', 'ar'] as Language[]).map(l => (
               <button
                 key={l}
@@ -368,10 +319,6 @@ export default function StartScreen({
 
       {/* ── Content ──────────────────────────────────────────────────── */}
       <main className="relative z-10 flex-1 px-4 pt-7 pb-6 max-w-2xl mx-auto w-full space-y-7">
-        <div className="rise-in" style={{ '--rise-delay': '0.1s' } as CSSProperties}>
-          <PlayerCard lang={lang} />
-        </div>
-
         {/* Mode selector */}
         <section className="rise-in" style={{ '--rise-delay': '0.16s' } as CSSProperties}>
           <SectionTitle>{t(lang, 'chooseMode')}</SectionTitle>
@@ -477,45 +424,6 @@ export default function StartScreen({
         </section>
         )}
 
-        {/* Category */}
-        {selectedMode !== 'review' && selectedMode !== 'exam' && (
-        <section className="rise-in" style={{ '--rise-delay': '0.28s' } as CSSProperties}>
-          <SectionTitle>{t(lang, 'chooseCategory')}</SectionTitle>
-          <div className="grid grid-cols-2 gap-2.5">
-            {categories.map(({ value, label }) => {
-              const isSelected = selectedCategory === value;
-              const hue = CATEGORY_HUE[value];
-              return (
-                <button
-                  key={value}
-                  onClick={() => setSelectedCategory(value)}
-                  aria-pressed={isSelected}
-                  className={cn(
-                    'flex items-center gap-2.5 ps-2.5 pe-3 min-h-12 py-1.5 rounded-2xl text-start transition-all duration-200 active:scale-[0.97]',
-                    !isSelected && 'glass hover:-translate-y-0.5',
-                  )}
-                  style={isSelected ? {
-                    background: `hsl(${hue} / 0.16)`,
-                    border: `1px solid hsl(${hue} / 0.8)`,
-                    boxShadow: `0 10px 26px -12px hsl(${hue} / 0.7)`,
-                  } : undefined}
-                >
-                  <span className="w-8 h-8 rounded-xl grid place-items-center bg-white/90 shadow-sm">
-                    <CategoryIcon category={value} className="w-[22px] h-[22px] text-slate-700" />
-                  </span>
-                  <span className={cn(
-                    'text-[13px] font-semibold leading-tight',
-                    isSelected ? 'text-[hsl(var(--foreground))]' : 'text-[hsl(var(--muted-foreground))]',
-                  )}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-        )}
-
         {/* Difficulty — quiz and review */}
         {(selectedMode === 'quiz' || selectedMode === 'review') && (
           <section className="rise-in" style={{ '--rise-delay': '0.05s' } as CSSProperties}>
@@ -576,25 +484,40 @@ export default function StartScreen({
           </section>
         )}
 
-        {/* Records: best scores + badges */}
-        <section className="space-y-3">
-          <HighScorePanel scores={scores} onClear={onClearScores} lang={lang} />
-          <BadgesPanel lang={lang} />
-        </section>
-
         {/* Start CTA — sticks to the bottom while you configure */}
         <div className="sticky bottom-3 z-30 space-y-2 pt-1">
-          <button
-            onClick={handleStart}
-            disabled={selectedMode === 'review' && mistakeCount === 0}
-            className={cn(
-              'w-full h-16 flex items-center justify-center gap-3 rounded-[22px] font-display font-bold text-lg bg-brand-gradient text-[hsl(var(--primary-foreground))] shadow-glow transition-all hover:brightness-110 active:scale-[0.98]',
-              selectedMode === 'review' && mistakeCount === 0 && 'opacity-45 grayscale cursor-not-allowed hover:brightness-100 active:scale-100',
+          <div className="flex gap-2">
+            <button
+              onClick={handleStart}
+              disabled={selectedMode === 'review' && mistakeCount === 0}
+              className={cn(
+                'flex-1 min-w-0 h-16 flex items-center justify-center gap-3 rounded-[22px] font-display font-bold text-lg bg-brand-gradient text-[hsl(var(--primary-foreground))] shadow-glow transition-all hover:brightness-110 active:scale-[0.98]',
+                selectedMode === 'review' && mistakeCount === 0 && 'opacity-45 grayscale cursor-not-allowed hover:brightness-100 active:scale-100',
+              )}
+            >
+              <activeMode.icon className={cn('w-5 h-5 shrink-0', selectedMode === 'quiz' && 'fill-current')} />
+              <span className="truncate">{startLabel}</span>
+            </button>
+
+            {/* Current category; opens the picker */}
+            {usesCategory && (
+              <button
+                onClick={() => setCategoryOpen(true)}
+                aria-haspopup="dialog"
+                aria-label={`${t(lang, 'categoryShort')}: ${CATEGORY_LABELS_I18N[lang][selectedCategory]}`}
+                className="glass h-16 w-[104px] shrink-0 rounded-[22px] flex flex-col items-center justify-center gap-1 px-1.5 transition-all active:scale-[0.97]"
+                style={selectedCategory !== 'all' ? { border: `1px solid hsl(${CATEGORY_HUE[selectedCategory]} / 0.8)` } : undefined}
+              >
+                <span className="w-7 h-7 rounded-lg grid place-items-center bg-white/90 shadow-sm">
+                  <CategoryIcon category={selectedCategory} className="w-[18px] h-[18px] text-slate-700" />
+                </span>
+                <span className="flex items-center gap-0.5 max-w-full text-[11px] font-bold leading-none text-[hsl(var(--foreground))]">
+                  <span className="truncate">{CATEGORY_LABELS_I18N[lang][selectedCategory]}</span>
+                  <ChevronUp className="w-3 h-3 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                </span>
+              </button>
             )}
-          >
-            <activeMode.icon className={cn('w-5 h-5', selectedMode === 'quiz' && 'fill-current')} />
-            {startLabel}
-          </button>
+          </div>
 
           {selectedMode === 'review' && (
             <p className="text-center text-xs text-[hsl(var(--muted-foreground))]">
@@ -614,6 +537,26 @@ export default function StartScreen({
           )}
         </div>
       </main>
+
+      <CategorySheet
+        open={categoryOpen}
+        onOpenChange={setCategoryOpen}
+        lang={lang}
+        selected={selectedCategory}
+        onSelect={setSelectedCategory}
+      />
+
+      <MenuScreen
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        lang={lang}
+        scores={scores}
+        onClearScores={onClearScores}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        muted={muted}
+        onToggleMute={onToggleMute}
+      />
     </div>
   );
 }

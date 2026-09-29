@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
-import { Language, TrafficSign } from '@/types/game';
+import { Language, TrafficSign, SignCategory } from '@/types/game';
 import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import { Home, Heart, Zap, RotateCcw } from 'lucide-react';
@@ -30,8 +30,24 @@ interface BlitzRound {
   isMatch: boolean; // true if shownName == sign.name
 }
 
-function buildRounds(): BlitzRound[] {
-  const pool = [...TRAFFIC_SIGNS];
+const MIN_POOL = 6;
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildRounds(category: SignCategory | 'all'): BlitzRound[] {
+  const pool = category === 'all' ? [...TRAFFIC_SIGNS] : TRAFFIC_SIGNS.filter(s => s.category === category);
+  // A small category (e.g. 5 plates) keeps all its signs and is topped up with other signs
+  if (pool.length < MIN_POOL) {
+    const extra = shuffle(TRAFFIC_SIGNS.filter(s => !pool.includes(s)));
+    pool.push(...extra.slice(0, MIN_POOL - pool.length));
+  }
   const rounds: BlitzRound[] = [];
   for (let i = 0; i < TOTAL_ROUNDS; i++) {
     const sign = pool[Math.floor(Math.random() * pool.length)];
@@ -50,6 +66,7 @@ function buildRounds(): BlitzRound[] {
 
 interface BlitzGameProps {
   lang: Language;
+  category: SignCategory | 'all';
   onHome: () => void;
   muted?: boolean;
   onToggleMute?: () => void;
@@ -69,9 +86,9 @@ function getCombo(streak: number) {
   return COMBO_THRESHOLDS.find(c => streak >= c.min) ?? COMBO_THRESHOLDS[3];
 }
 
-export default function BlitzGame({ lang, onHome, muted = false, onToggleMute }: BlitzGameProps) {
+export default function BlitzGame({ lang, category, onHome, muted = false, onToggleMute }: BlitzGameProps) {
   const [phase, setPhase]         = useState<Phase>('intro');
-  const [rounds, setRounds]       = useState<BlitzRound[]>(buildRounds);
+  const [rounds, setRounds]       = useState<BlitzRound[]>(() => buildRounds(category));
   const [current, setCurrent]     = useState(0);
   const [lives, setLives]         = useState(MAX_LIVES);
   const [score, setScore]         = useState(0);
@@ -92,7 +109,7 @@ export default function BlitzGame({ lang, onHome, muted = false, onToggleMute }:
   }, []);
 
   const restartGame = useCallback(() => {
-    setRounds(buildRounds());
+    setRounds(buildRounds(category));
     setCurrent(0);
     setLives(MAX_LIVES);
     setScore(0);
@@ -103,7 +120,7 @@ export default function BlitzGame({ lang, onHome, muted = false, onToggleMute }:
     setAnswered(false);
     setFlashClass('');
     setPhase('playing');
-  }, []);
+  }, [category]);
 
   const finishGame = useCallback(() => {
     clearTimer();
