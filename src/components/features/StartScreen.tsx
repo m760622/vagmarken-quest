@@ -482,7 +482,11 @@ export default function StartScreen({
                 corner={gamesOpen
                   ? <ChevronUp className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />
                   : <ChevronDown className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />}
-                onClick={() => setGamesOpen(open => !open)}
+                onClick={() => {
+                  // Opening the list means a game is about to be picked: clear the current choice (and the start bar) until then
+                  if (!gamesOpen) setSelectedMode(null);
+                  setGamesOpen(open => !open);
+                }}
               />
               {gamesOpen && GAME_IDS.map((id, i) => {
                 const m = modeOf(id);
