@@ -285,7 +285,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     dailyBonus: 'مكافأة اليوم',
     lifeline: '50/50',
     comboBonus: 'مكافأة التتابع',
-    appTitle: 'مسابقة اللافتات',
+    appTitle: 'إشارات المرور',
     appSubtitle: 'تعلّم إشارات المرور السويدية عبر مسابقة',
     appBadge: 'اختبار رخصة القيادة',
     chooseCategory: 'اختر الفئة',
