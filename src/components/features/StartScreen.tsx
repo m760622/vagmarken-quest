@@ -8,7 +8,7 @@ import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
   Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
-  ShieldCheck, ChevronUp, ChevronDown, ChevronRight, Check, History, ClipboardCheck, Gamepad2, type LucideIcon,
+  ShieldCheck, ChevronUp, ChevronDown, ChevronRight, Check, History, ClipboardCheck, Gamepad2, ScanEye, Shapes, Album, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,7 @@ import { usePlayer } from '@/hooks/usePlayer';
 import { displayStreak, streakAtRisk } from '@/lib/player';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam' | 'reveal' | 'odd' | 'collection';
 
 interface ProgressionInfo {
   hardUnlocked: boolean;
@@ -28,7 +28,7 @@ interface ProgressionInfo {
 
 interface StartScreenProps {
   onStart: (category: SignCategory | 'all', difficulty: Difficulty, signPool?: TrafficSign[], options?: { review?: boolean }) => void;
-  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam', category: SignCategory | 'all') => void;
+  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection', category: SignCategory | 'all') => void;
   scores: HighScore[];
   onClearScores: () => void;
   lang: Language;
@@ -47,10 +47,13 @@ const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string
   { id: 'blitz',  icon: Zap,      labelKey: 'modeBlitz',  descKey: 'modeBlitzDesc',  hue: '52 98% 56%' },
   { id: 'memory', icon: Brain,    labelKey: 'modeMemory', descKey: 'modeMemoryDesc', hue: '266 90% 70%' },
   { id: 'match',  icon: Puzzle,   labelKey: 'modeMatch',  descKey: 'modeMatchDesc',  hue: '330 88% 66%' },
+  { id: 'reveal', icon: ScanEye,  labelKey: 'modeReveal', descKey: 'modeRevealDesc', hue: '228 86% 68%' },
+  { id: 'odd',    icon: Shapes,   labelKey: 'modeOdd',    descKey: 'modeOddDesc',    hue: '132 68% 50%' },
+  { id: 'collection', icon: Album, labelKey: 'modeCollection', descKey: 'modeCollectionDesc', hue: '12 90% 64%' },
 ];
 
-/* The four games share one expandable card, so the mode list stays short */
-const GAME_IDS: GameMode[] = ['daily', 'blitz', 'memory', 'match'];
+/* The games share one expandable card, so the mode list stays short */
+const GAME_IDS: GameMode[] = ['daily', 'blitz', 'memory', 'match', 'reveal', 'odd', 'collection'];
 const GAMES_HUE = '292 84% 66%';
 /* Space kept free above the sticky start bar when scrolling revealed cards into view */
 const START_BAR_CLEARANCE = 128;
@@ -335,6 +338,9 @@ export default function StartScreen({
     selectedMode === 'blitz'  ? t(lang, 'modeBlitz') :
     selectedMode === 'memory' ? t(lang, 'modeMemory') :
     selectedMode === 'match'  ? t(lang, 'modeMatch') :
+    selectedMode === 'reveal' ? t(lang, 'modeReveal') :
+    selectedMode === 'odd'    ? t(lang, 'modeOdd') :
+    selectedMode === 'collection' ? t(lang, 'modeCollection') :
                                 t(lang, 'learnMode');
 
   const trackingClass = isRtl ? '' : 'tracking-[0.16em] uppercase';
@@ -495,6 +501,7 @@ export default function StartScreen({
                 return (
                   <ModeCard
                     key={id}
+                    wide={GAME_IDS.length % 2 === 1 && i === GAME_IDS.length - 1}
                     icon={m.icon}
                     hue={m.hue}
                     title={t(lang, m.labelKey)}

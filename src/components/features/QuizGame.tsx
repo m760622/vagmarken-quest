@@ -12,6 +12,9 @@ import BlitzGame from './BlitzGame';
 import MemoryGame from './MemoryGame';
 import DailyChallenge from './DailyChallenge';
 import ExamGame from './ExamGame';
+import RevealGame from './RevealGame';
+import OddOneOutGame from './OddOneOutGame';
+import CollectionGame from './CollectionGame';
 import ScoreBar from './ScoreBar';
 import SignDisplay from './SignDisplay';
 import AnswerOptions from './AnswerOptions';
@@ -69,7 +72,7 @@ function TimerArc({ timeLeft, total }: { timeLeft: number; total: number }) {
   );
 }
 
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection';
 
 export default function QuizGame() {
   const { muted, toggleMute } = useMute();
@@ -103,6 +106,15 @@ export default function QuizGame() {
   }
   if (mode === 'learn') {
     return <LearnMode lang={lang} category={activeCategory} onHome={() => setMode('quiz')} />;
+  }
+  if (mode === 'reveal') {
+    return <RevealGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+  }
+  if (mode === 'odd') {
+    return <OddOneOutGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+  }
+  if (mode === 'collection') {
+    return <CollectionGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
 
   if (state.phase === 'start') {

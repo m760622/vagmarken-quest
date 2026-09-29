@@ -300,6 +300,9 @@
 .hue-yellow { --hue: 52 98% 56%; }
 .hue-violet { --hue: 266 90% 70%; }
 .hue-amber  { --hue: 32 96% 58%; }
+.hue-indigo { --hue: 228 86% 68%; }
+.hue-emerald { --hue: 132 68% 50%; }
+.hue-coral  { --hue: 12 90% 64%; }
 
 @media (prefers-reduced-motion: reduce) {
   .sign-float { animation: none; transform: rotate(var(--rot, 0deg)); }
