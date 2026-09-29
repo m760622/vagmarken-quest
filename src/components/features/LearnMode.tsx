@@ -55,6 +55,7 @@ const CATEGORY_BADGE_CLS: Record<string, string> = {
   mandatory:   'bg-blue-500/20 text-blue-400 border-blue-500/40',
   priority:    'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
   information: 'bg-sky-500/20 text-sky-400 border-sky-500/40',
+  additional: 'bg-slate-500/20 text-slate-400 border-slate-500/40',
 };
 
 export default function LearnMode({ lang, category, onHome }: LearnModeProps) {

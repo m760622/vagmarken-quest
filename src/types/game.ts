@@ -1,4 +1,4 @@
-export type SignCategory = 'warning' | 'prohibition' | 'mandatory' | 'priority' | 'information';
+export type SignCategory = 'warning' | 'prohibition' | 'mandatory' | 'priority' | 'information' | 'additional';
 export type Language = 'sv' | 'ar' | 'en';
 
 export interface TrafficSign {

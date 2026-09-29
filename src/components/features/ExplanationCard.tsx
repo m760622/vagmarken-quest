@@ -15,6 +15,7 @@ const CATEGORY_BADGE: Record<string, { label: string; cls: string }> = {
   mandatory:   { label: 'D',  cls: 'bg-blue-500/20 text-blue-400 border-blue-500/40' },
   priority:    { label: 'B',  cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40' },
   information: { label: 'E',  cls: 'bg-sky-500/20 text-sky-400 border-sky-500/40' },
+  additional: { label: 'T',  cls: 'bg-slate-500/20 text-slate-400 border-slate-500/40' },
 };
 
 export default function ExplanationCard({ sign, isCorrect, timedOut, lang }: ExplanationCardProps) {

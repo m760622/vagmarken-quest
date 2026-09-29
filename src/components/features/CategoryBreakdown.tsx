@@ -14,6 +14,7 @@ const CATEGORY_CONFIG: Record<SignCategory, { emoji: string; bar: string; bg: st
   mandatory:   { emoji: '🔵', bar: 'from-blue-500 to-sky-400',      bg: 'bg-blue-500/10',   border: 'border-blue-500/30'  },
   priority:    { emoji: '◆',  bar: 'from-yellow-500 to-amber-300',  bg: 'bg-yellow-500/10', border: 'border-yellow-500/30'},
   information: { emoji: '🟦', bar: 'from-sky-500 to-cyan-400',      bg: 'bg-sky-500/10',    border: 'border-sky-500/30'   },
+  additional: { emoji: '▭', bar: 'from-slate-500 to-slate-400',      bg: 'bg-slate-500/10',    border: 'border-slate-500/30'   },
 };
 
 export default function CategoryBreakdown({ answers, lang }: CategoryBreakdownProps) {

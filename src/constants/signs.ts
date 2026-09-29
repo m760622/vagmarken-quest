@@ -1143,6 +1143,67 @@ export const TRAFFIC_SIGNS: TrafficSign[] = [
     descriptionEn: 'Marks the start of a lane reserved for scheduled (public transport) services.',
     descriptionAr: 'يبيّن بداية مسار مخصص لمركبات النقل العام المنتظم.',
   },
+  // ── T. TILLÄGGSTAVLOR (Additional plates) — verified names, public-domain images ──
+  {
+    id: 'T3', code: 'T3',
+    name: 'Avstånd till stoppskyldighet',
+    nameEn: 'Distance to stop obligation',
+    nameAr: 'المسافة إلى إلزام التوقف (قِف)',
+    category: 'additional', shape: 'square', color: 'white',
+    symbol: '➕',
+    imageUrl: signImage('T3'),
+    description: 'Tilläggstavla som anger avståndet till en stoppskyldighet.',
+    descriptionEn: 'Additional plate showing the distance to a stop obligation.',
+    descriptionAr: 'لافتة إضافية تبيّن المسافة إلى نقطة الوقوف الإلزامي (قِف).',
+  },
+  {
+    id: 'T4', code: 'T4',
+    name: 'Fri bredd',
+    nameEn: 'Clear width',
+    nameAr: 'العرض الحرّ المتاح',
+    category: 'additional', shape: 'square', color: 'white',
+    symbol: '➕',
+    imageUrl: signImage('T4'),
+    description: 'Tilläggstavla som anger fri bredd, till exempel vid en trång passage.',
+    descriptionEn: 'Additional plate showing the clear (usable) width, e.g. at a narrow passage.',
+    descriptionAr: 'لافتة إضافية تبيّن العرض الحرّ المتاح، مثلًا عند ممر ضيق.',
+  },
+  {
+    id: 'T5', code: 'T5',
+    name: 'Totalvikt',
+    nameEn: 'Total weight',
+    nameAr: 'الوزن الإجمالي',
+    category: 'additional', shape: 'square', color: 'white',
+    symbol: '➕',
+    imageUrl: signImage('T5'),
+    description: 'Tilläggstavla som anger totalvikt.',
+    descriptionEn: 'Additional plate showing a total (gross) weight.',
+    descriptionAr: 'لافتة إضافية تبيّن الوزن الإجمالي.',
+  },
+  {
+    id: 'T6', code: 'T6',
+    name: 'Klockslag för förbuds giltighet',
+    nameEn: 'Times when the prohibition applies',
+    nameAr: 'أوقات سريان المنع',
+    category: 'additional', shape: 'square', color: 'white',
+    symbol: '➕',
+    imageUrl: signImage('T6'),
+    description: 'Tilläggstavla som anger vilka klockslag ett förbud gäller.',
+    descriptionEn: 'Additional plate showing the times of day when a prohibition applies.',
+    descriptionAr: 'لافتة إضافية تبيّن الساعات التي يسري فيها المنع.',
+  },
+  {
+    id: 'T14', code: 'T14',
+    name: 'Flervägsstopp',
+    nameEn: 'All-way stop',
+    nameAr: 'قِف من جميع الاتجاهات',
+    category: 'additional', shape: 'square', color: 'white',
+    symbol: '➕',
+    imageUrl: signImage('T14'),
+    description: 'Tilläggstavla som anger flervägsstopp, där alla trafikanter måste stanna.',
+    descriptionEn: 'Additional plate for an all-way stop, where every approach must stop.',
+    descriptionAr: 'لافتة إضافية لتقاطع «قِف» من جميع الاتجاهات، حيث يجب أن تتوقف كل المداخل.',
+  },
 ];
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -1152,6 +1213,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   mandatory: 'Påbudsmärken',
   priority: 'Väjningsmärken',
   information: 'Anvisningsmärken',
+  additional: 'Tilläggstavlor',
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {
@@ -1160,4 +1222,5 @@ export const CATEGORY_COLORS: Record<string, string> = {
   mandatory: 'bg-blue-500',
   priority: 'bg-yellow-500',
   information: 'bg-sky-500',
+  additional: 'bg-slate-500',
 };

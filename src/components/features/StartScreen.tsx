@@ -42,6 +42,7 @@ const CATEGORY_HUE: Record<SignCategory | 'all', string> = {
   mandatory: '217 91% 64%',
   priority: '48 96% 55%',
   information: '199 92% 58%',
+  additional: '250 70% 72%',
 };
 
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
@@ -98,6 +99,13 @@ function CategoryIcon({ category, className }: { category: SignCategory | 'all';
         <svg {...common}>
           <rect x="5.2" y="5.2" width="13.6" height="13.6" rx="2.2" transform="rotate(45 12 12)" fill="#fff" stroke="#111827" strokeWidth="1.2" />
           <rect x="7.4" y="7.4" width="9.2" height="9.2" rx="1.4" transform="rotate(45 12 12)" fill="#FBBF24" />
+        </svg>
+      );
+    case 'additional':
+      return (
+        <svg {...common}>
+          <rect x="3" y="7" width="18" height="10" rx="2" fill="#fff" stroke="#111827" strokeWidth="1.6" />
+          <rect x="6.5" y="11" width="11" height="2" rx="1" fill="#111827" />
         </svg>
       );
     case 'information':
