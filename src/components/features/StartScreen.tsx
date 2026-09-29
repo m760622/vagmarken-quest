@@ -8,7 +8,7 @@ import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
   Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
-  ShieldCheck, ChevronUp, Check, History, ClipboardCheck, type LucideIcon,
+  ShieldCheck, ChevronUp, ChevronRight, Check, History, ClipboardCheck, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -224,8 +224,10 @@ export default function StartScreen({
 
   const trackingClass = isRtl ? '' : 'tracking-[0.16em] uppercase';
 
+  // overflow-x-clip, not hidden: hidden makes this root a scroll container, and the
+  // start bar below then never sticks to the bottom of the screen.
   return (
-    <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col overflow-x-clip" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <header className="relative">
         {/* Top bar: brand mark, menu chip and language, in flow so nothing overlaps on phones */}
@@ -328,11 +330,13 @@ export default function StartScreen({
               const Icon = m.icon;
               const isQuiz = m.id === 'quiz';
               const isWide = isQuiz || m.id === 'exam';
+              // No options to choose and an intro screen of their own: open straight away
+              const opensDirectly = m.id === 'exam' || m.id === 'daily';
               return (
                 <button
                   key={m.id}
-                  onClick={() => setSelectedMode(m.id)}
-                  aria-pressed={isActive}
+                  onClick={() => (opensDirectly ? onStartMode(m.id as 'exam' | 'daily', selectedCategory) : setSelectedMode(m.id))}
+                  aria-pressed={opensDirectly ? undefined : isActive}
                   className={cn(
                     'relative overflow-hidden text-start rounded-3xl transition-all duration-200 active:scale-[0.98]',
                     isWide ? 'col-span-2 p-4 flex items-center gap-4' : 'p-3.5 flex flex-col gap-3',
@@ -372,6 +376,14 @@ export default function StartScreen({
                       style={{ background: `hsl(${m.hue})` }}
                     >
                       <Check className="w-3 h-3 text-[hsl(var(--primary-foreground))]" strokeWidth={3.5} />
+                    </span>
+                  )}
+                  {opensDirectly && (
+                    <span
+                      className="absolute top-3 end-3 w-5 h-5 rounded-full grid place-items-center bg-[hsl(var(--foreground))]/10"
+                      aria-hidden="true"
+                    >
+                      <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" />
                     </span>
                   )}
                 </button>
