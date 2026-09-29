@@ -93,10 +93,10 @@ export default function QuizGame() {
     return <ExamGame lang={lang} onHome={() => setMode('quiz')} />;
   }
   if (mode === 'blitz') {
-    return <BlitzGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+    return <BlitzGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
   if (mode === 'memory') {
-    return <MemoryGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+    return <MemoryGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
   if (mode === 'match') {
     return <MatchingGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} />;
