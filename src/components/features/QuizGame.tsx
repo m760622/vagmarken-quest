@@ -122,6 +122,8 @@ export default function QuizGame() {
         lang={lang}
         onLangChange={setLang}
         progression={progression}
+        muted={muted}
+        onToggleMute={toggleMute}
       />
     );
   }

@@ -1,20 +1,19 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { SignCategory, Language, HighScore, TrafficSign } from '@/types/game';
 import { CATEGORY_LABELS_I18N, t } from '@/constants/i18n';
-import HighScorePanel from './HighScorePanel';
-import PlayerCard from './PlayerCard';
-import BadgesPanel from './BadgesPanel';
+import MenuScreen from './MenuScreen';
 import SignDisplay from './SignDisplay';
 import {
-  Play, Languages, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Sun, Moon,
+  Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
   ShieldCheck, LayoutGrid, Check, History, ClipboardCheck, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { UNLOCK_THRESHOLD } from '@/hooks/useProgression';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
-import { useMistakes } from '@/hooks/useProgress';
+import { useMistakes, useProgress } from '@/hooks/useProgress';
 import { usePlayer } from '@/hooks/usePlayer';
+import { displayStreak, streakAtRisk } from '@/lib/player';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam';
@@ -32,6 +31,8 @@ interface StartScreenProps {
   lang: Language;
   onLangChange: (lang: Language) => void;
   progression: ProgressionInfo;
+  muted: boolean;
+  onToggleMute: () => void;
 }
 
 /* ── Accent colours (HSL triples so they can take an alpha) ───────── */
@@ -195,7 +196,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 export default function StartScreen({
-  onStart, onStartMode, scores, onClearScores, lang, onLangChange, progression,
+  onStart, onStartMode, scores, onClearScores, lang, onLangChange, progression, muted, onToggleMute,
 }: StartScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<SignCategory | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
@@ -204,6 +205,11 @@ export default function StartScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const { theme, toggleTheme } = useTheme();
   const { player } = usePlayer();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { missions } = useProgress();
+  const missionsDone = missions.filter(m => m.done).length;
+  const streak = displayStreak(player);
+  const streakWarning = streak > 0 && streakAtRisk(player);
   // After the first finished game the hero shrinks so the modes are reachable right away
   const compact = player.gamesPlayed > 0;
   const { ids: mistakeIds, count: mistakeCount } = useMistakes();
@@ -284,27 +290,34 @@ export default function StartScreen({
     <div className="min-h-screen flex flex-col overflow-x-hidden" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <header className="relative">
-        {/* Top bar: brand mark + controls, in flow so nothing overlaps on phones */}
-        <div className="relative z-20 flex items-center justify-between gap-3 px-4 pt-4 max-w-2xl mx-auto w-full" dir="ltr">
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-brand-gradient grid place-items-center shadow-glow">
+        {/* Top bar: brand mark, menu chip and language, in flow so nothing overlaps on phones */}
+        <div className="relative z-20 flex items-center justify-between gap-2 px-4 pt-4 max-w-2xl mx-auto w-full" dir="ltr">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-9 h-9 rounded-xl bg-brand-gradient grid place-items-center shadow-glow shrink-0">
               <ShieldCheck className="w-[18px] h-[18px] text-[hsl(var(--primary-foreground))]" />
             </span>
-            <span className="font-display text-sm font-bold text-[hsl(var(--foreground))] hidden min-[380px]:block">
-              Vägmärken
-            </span>
+            {/* Menu chip: opens the progress / records / settings screen, with the key numbers visible */}
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label={t(lang, 'menu')}
+              className="glass relative rounded-2xl h-10 px-3 flex items-center gap-3 text-[hsl(var(--foreground))] transition-all active:scale-[0.97]"
+            >
+              <Menu className="w-[18px] h-[18px]" />
+              <span className={cn('flex items-center gap-1 text-xs font-extrabold tabular-nums', streak > 0 ? 'text-orange-400' : 'text-[hsl(var(--muted-foreground))]')}>
+                <Flame className={cn('w-4 h-4', streak > 0 && 'fill-orange-400/40')} />
+                {streak}
+              </span>
+              <span className={cn('flex items-center gap-1 text-xs font-extrabold tabular-nums', missionsDone === missions.length && missions.length > 0 ? 'text-emerald-400' : 'text-[hsl(var(--brand-light))]')}>
+                <ListChecks className="w-4 h-4" />
+                {missionsDone}/{missions.length}
+              </span>
+              {streakWarning && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </button>
           </div>
 
           <div className="glass rounded-2xl p-1 flex items-center gap-0.5">
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-white/10 transition-colors"
-              aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <span className="w-px h-5 bg-[hsl(var(--foreground))]/15 mx-0.5" />
-            <Languages className="w-3.5 h-3.5 mx-1 text-[hsl(var(--muted-foreground))]" />
             {(['en', 'sv', 'ar'] as Language[]).map(l => (
               <button
                 key={l}
@@ -368,10 +381,6 @@ export default function StartScreen({
 
       {/* ── Content ──────────────────────────────────────────────────── */}
       <main className="relative z-10 flex-1 px-4 pt-7 pb-6 max-w-2xl mx-auto w-full space-y-7">
-        <div className="rise-in" style={{ '--rise-delay': '0.1s' } as CSSProperties}>
-          <PlayerCard lang={lang} />
-        </div>
-
         {/* Mode selector */}
         <section className="rise-in" style={{ '--rise-delay': '0.16s' } as CSSProperties}>
           <SectionTitle>{t(lang, 'chooseMode')}</SectionTitle>
@@ -576,12 +585,6 @@ export default function StartScreen({
           </section>
         )}
 
-        {/* Records: best scores + badges */}
-        <section className="space-y-3">
-          <HighScorePanel scores={scores} onClear={onClearScores} lang={lang} />
-          <BadgesPanel lang={lang} />
-        </section>
-
         {/* Start CTA — sticks to the bottom while you configure */}
         <div className="sticky bottom-3 z-30 space-y-2 pt-1">
           <button
@@ -614,6 +617,18 @@ export default function StartScreen({
           )}
         </div>
       </main>
+
+      <MenuScreen
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        lang={lang}
+        scores={scores}
+        onClearScores={onClearScores}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        muted={muted}
+        onToggleMute={onToggleMute}
+      />
     </div>
   );
 }
