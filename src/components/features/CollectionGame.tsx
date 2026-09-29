@@ -342,9 +342,10 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
                             {lang !== 'en' && <SpeakButton text={sg.name} lang={lang} />}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-base font-display font-extrabold text-[hsl(var(--foreground))] leading-snug">{signName(sg, lang)}</p>
-                            {sub && <bdi dir="ltr" className="block text-xs font-semibold opacity-75 mt-0.5">{sub}</bdi>}
-                            <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))] mt-1.5">{signDescription(sg, lang)}</p>
+                            {/* Long Swedish compounds ("Hastighetsbegränsning") may break rather than stick out on a 320px screen */}
+                            <p className="text-[15px] min-[360px]:text-base font-display font-extrabold text-[hsl(var(--foreground))] leading-snug [overflow-wrap:anywhere]">{signName(sg, lang)}</p>
+                            {sub && <bdi dir="ltr" className="block text-xs font-semibold opacity-75 mt-0.5 [overflow-wrap:anywhere]">{sub}</bdi>}
+                            <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))] mt-1.5 [overflow-wrap:anywhere]">{signDescription(sg, lang)}</p>
                           </div>
                         </li>
                       );

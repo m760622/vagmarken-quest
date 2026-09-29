@@ -151,7 +151,7 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
               >
                 <div aria-hidden="true"><SignDisplay sign={sign} size="md" /></div>
                 {g.answered && (
-                  <span className="mt-1 text-[11px] leading-tight font-semibold text-[hsl(var(--foreground))] line-clamp-2 text-center">
+                  <span className="mt-1 text-[11px] leading-tight font-semibold text-[hsl(var(--foreground))] line-clamp-2 text-center [overflow-wrap:anywhere]">
                     {signName(sign, lang)}
                   </span>
                 )}
