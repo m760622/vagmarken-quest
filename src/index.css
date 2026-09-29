@@ -1,0 +1,302 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Sora:wght@500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens — "Night Drive" (dark, default) & "Nordic Day" (light).
+ * Screens read colours only through these variables, so a theme change
+ * here reaches every game mode.
+ */
+@layer base {
+  :root, html:not(.light) {
+    /* Base — deep indigo night */
+    --background: 236 52% 6%;
+    --foreground: 220 40% 97%;
+
+    --card: 236 40% 10%;
+    --card-foreground: 220 40% 97%;
+
+    --popover: 236 40% 10%;
+    --popover-foreground: 220 40% 97%;
+
+    /* Brand — retro-reflective mint, with a magenta partner for gradients */
+    --brand: 168 92% 55%;
+    --brand-light: 168 95% 70%;
+    --brand-dark: 168 85% 44%;
+    --accent-2: 318 92% 64%;
+
+    --primary: 168 92% 55%;
+    --primary-foreground: 236 52% 6%;
+
+    --secondary: 236 30% 16%;
+    --secondary-foreground: 220 30% 82%;
+
+    --muted: 236 30% 14%;
+    --muted-foreground: 228 20% 68%;
+
+    --accent: 236 30% 16%;
+    --accent-foreground: 220 40% 97%;
+
+    --destructive: 0 78% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 236 28% 20%;
+    --input: 236 28% 20%;
+    --ring: 168 92% 55%;
+
+    --radius: 0.75rem;
+
+    /* Option buttons */
+    --option-bg: 236 40% 11%;
+    --option-border: 236 28% 21%;
+    --option-hover-bg: 236 40% 14%;
+    --option-hover-border: 168 75% 48%;
+    --option-icon-bg: 236 32% 17%;
+
+    /* Sign code badge */
+    --sign-code: 168 95% 68%;
+
+    /* Glass surfaces + page aurora */
+    --glass: 236 45% 15%;
+    --glass-border: 230 60% 80%;
+    --aurora-1: 168 92% 55%;
+    --aurora-2: 318 92% 64%;
+    --aurora-3: 258 85% 62%;
+    --aurora-a1: 0.26;
+    --aurora-a2: 0.2;
+    --aurora-a3: 0.22;
+
+    /* Sidebar (unused but required) */
+    --sidebar-background: 236 52% 6%;
+    --sidebar-foreground: 220 40% 97%;
+    --sidebar-primary: 168 92% 55%;
+    --sidebar-primary-foreground: 236 52% 6%;
+    --sidebar-accent: 236 30% 14%;
+    --sidebar-accent-foreground: 220 40% 97%;
+    --sidebar-border: 236 28% 20%;
+    --sidebar-ring: 168 92% 55%;
+  }
+
+  /* ── Light theme — "Nordic Day" ── */
+  html.light {
+    --background: 42 50% 96%;
+    --foreground: 236 52% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 236 52% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 236 52% 12%;
+
+    --brand: 168 82% 45%;
+    --brand-light: 172 90% 27%;
+    --brand-dark: 172 85% 34%;
+    --accent-2: 320 85% 56%;
+
+    --primary: 168 82% 45%;
+    --primary-foreground: 236 52% 8%;
+
+    --secondary: 236 25% 92%;
+    --secondary-foreground: 236 40% 22%;
+
+    --muted: 236 25% 93%;
+    --muted-foreground: 232 16% 40%;
+
+    --accent: 236 25% 92%;
+    --accent-foreground: 236 52% 12%;
+
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 236 22% 86%;
+    --input: 236 22% 86%;
+    --ring: 168 82% 40%;
+
+    --radius: 0.75rem;
+
+    --option-bg: 0 0% 100%;
+    --option-border: 236 20% 85%;
+    --option-hover-bg: 42 40% 97%;
+    --option-hover-border: 168 70% 38%;
+    --option-icon-bg: 236 30% 95%;
+
+    --sign-code: 172 90% 26%;
+
+    --glass: 0 0% 100%;
+    --glass-border: 236 30% 60%;
+    --aurora-1: 168 82% 50%;
+    --aurora-2: 320 85% 68%;
+    --aurora-3: 42 100% 62%;
+    --aurora-a1: 0.22;
+    --aurora-a2: 0.14;
+    --aurora-a3: 0.2;
+
+    --sidebar-background: 42 50% 96%;
+    --sidebar-foreground: 236 52% 12%;
+    --sidebar-primary: 168 82% 45%;
+    --sidebar-primary-foreground: 236 52% 8%;
+    --sidebar-accent: 236 25% 92%;
+    --sidebar-accent-foreground: 236 52% 12%;
+    --sidebar-border: 236 22% 86%;
+    --sidebar-ring: 168 82% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    background-color: hsl(var(--background));
+  }
+
+  body {
+    @apply text-foreground;
+    min-height: 100vh;
+    /* Inter has no Arabic glyphs, so Arabic falls through to Cairo */
+    font-family: 'Inter', 'Cairo', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(60% 38% at 12% 0%, hsl(var(--aurora-1) / var(--aurora-a1)), transparent 72%),
+      radial-gradient(55% 36% at 100% 10%, hsl(var(--aurora-2) / var(--aurora-a2)), transparent 72%),
+      radial-gradient(75% 42% at 50% 100%, hsl(var(--aurora-3) / var(--aurora-a3)), transparent 72%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  /* Explanation card entrance */
+  .animate-in {
+    animation-fill-mode: both;
+  }
+  .fade-in {
+    animation-name: fade-in;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+  }
+  .slide-in-from-bottom-2 {
+    animation-name: slide-in-from-bottom-2;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-out;
+  }
+
+  .font-display {
+    font-family: 'Sora', 'Cairo', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Frosted surface used for cards on top of the aurora */
+  .glass {
+    background: hsl(var(--glass) / 0.62);
+    border: 1px solid hsl(var(--glass-border) / 0.16);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  /* Brand gradients */
+  .bg-brand-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--brand-light)) 0%, hsl(var(--brand)) 45%, hsl(190 90% 52%) 100%);
+  }
+  .text-brand-gradient {
+    background-image: linear-gradient(100deg, hsl(var(--brand-light)) 0%, hsl(190 95% 62%) 45%, hsl(var(--accent-2)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shadow-glow {
+    box-shadow: 0 10px 34px -8px hsl(var(--brand) / 0.55), 0 0 0 1px hsl(var(--brand) / 0.35) inset;
+  }
+}
+
+/* Hero floating sign particles — pure CSS, no per-frame React re-renders */
+@keyframes sign-float {
+  0%, 100% { transform: rotate(var(--rot, 0deg)) translateY(-6px); }
+  50%      { transform: rotate(var(--rot, 0deg)) translateY(6px); }
+}
+.sign-float {
+  animation: sign-float var(--dur, 8s) ease-in-out var(--delay, 0s) infinite;
+  will-change: transform;
+}
+
+/* Hero road: dashes stream toward the viewer */
+@keyframes road-stream {
+  from { background-position: 0 0; }
+  to   { background-position: 0 64px; }
+}
+.road-dashes {
+  background-image: repeating-linear-gradient(to bottom, hsl(var(--foreground) / 0.85) 0 26px, transparent 26px 64px);
+  animation: road-stream 0.9s linear infinite;
+}
+
+/* Soft breathing glow behind hero signs */
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.08); }
+}
+.glow-breathe {
+  animation: glow-breathe 4.5s ease-in-out infinite;
+}
+
+/* Gentle entrance for sections */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise-in {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--rise-delay, 0s);
+}
+
+/* Confetti, pops and combo floats for the "fun" layer */
+@keyframes confetti-fall {
+  0%   { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--drift, 0px), 112vh, 0) rotate(var(--spin, 540deg)); opacity: 0.9; }
+}
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  animation: confetti-fall 2.8s cubic-bezier(0.25, 0.6, 0.4, 1) forwards;
+  will-change: transform;
+}
+
+@keyframes pop-in {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.16); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-in { animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes combo-float {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.6); }
+  18%  { opacity: 1; transform: translateY(0) scale(1.12); }
+  70%  { opacity: 1; transform: translateY(-14px) scale(1); }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+.combo-float { animation: combo-float 1.6s ease-out both; }
+
+@keyframes match-burst {
+  0%   { box-shadow: 0 0 0 0 hsl(var(--brand) / 0.75); }
+  100% { box-shadow: 0 0 0 20px hsl(var(--brand) / 0); }
+}
+.match-burst { animation: match-burst 0.7s ease-out; }
+
+/* Mode-coloured primary button (matches the brand CTA, tinted per game mode) */
+.btn-hue {
+  background-image: linear-gradient(135deg, hsl(var(--hue)), hsl(var(--hue) / 0.72));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 12px 30px -10px hsl(var(--hue) / 0.65), inset 0 0 0 1px hsl(0 0% 100% / 0.18);
+}
+.btn-hue:hover { filter: brightness(1.08); }
+.hue-yellow { --hue: 52 98% 56%; }
+.hue-violet { --hue: 266 90% 70%; }
+.hue-amber  { --hue: 32 96% 58%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sign-float { animation: none; transform: rotate(var(--rot, 0deg)); }
+  .road-dashes, .glow-breathe, .rise-in, .pop-in, .combo-float, .match-burst { animation: none; }
+  .confetti { display: none; }
+}

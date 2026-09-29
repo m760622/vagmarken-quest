@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#151a4a"/>
+      <stop offset="1" stop-color="#05071a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="58%" r="52%">
+      <stop offset="0" stop-color="#2df2d0" stop-opacity=".6"/>
+      <stop offset="1" stop-color="#2df2d0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8affea"/>
+      <stop offset="1" stop-color="#3bc6f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <path d="M0 512 L196 372 L316 372 L512 512 Z" fill="#ffffff" opacity=".08"/>
+  <rect x="249" y="386" width="14" height="30" rx="5" fill="url(#mint)"/>
+  <rect x="249" y="436" width="14" height="42" rx="5" fill="url(#mint)"/>
+  <g transform="translate(256 226) rotate(45)">
+    <rect x="-116" y="-116" width="232" height="232" rx="34" fill="#ffffff"/>
+    <rect x="-95" y="-95" width="190" height="190" rx="22" fill="#111827"/>
+    <rect x="-83" y="-83" width="166" height="166" rx="16" fill="#ffd21f"/>
+  </g>
+</svg>
