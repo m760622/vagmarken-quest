@@ -10,9 +10,10 @@ permissions:
   pages: write
   id-token: write
 
+# Let a running deploy finish; a newer push waits in the queue (only a still-pending run is replaced)
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
