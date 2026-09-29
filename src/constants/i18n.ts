@@ -110,6 +110,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     modeQuizDesc: 'Answer 10 questions',
     modeMatchDesc: 'Match the signs',
     modeLearnDesc: 'Browse flashcards',
+    modeGames: 'Games',
     modeDaily: 'Daily',
     modeDailyDesc: 'Same signs every day',
     searchPlaceholder: 'Search sign (e.g. A1, dangerous)…',
@@ -236,6 +237,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     modeQuizDesc: 'Svara på 10 frågor',
     modeMatchDesc: 'Para ihop skyltar',
     modeLearnDesc: 'Bläddra flashcards',
+    modeGames: 'Spel',
     // Daily Challenge
     modeDaily: 'Daglig',
     modeDailyDesc: 'Samma märken varje dag',
@@ -365,6 +367,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     modeQuizDesc: '١٠ أسئلة متنوعة',
     modeMatchDesc: 'طابق الإشارات',
     modeLearnDesc: 'بطاقات تعليمية',
+    modeGames: 'ألعاب',
     // Daily Challenge
     modeDaily: 'يومي',
     modeDailyDesc: 'نفس الإشارات يومياً',
