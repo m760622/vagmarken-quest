@@ -101,6 +101,27 @@ export function planSession(
   };
 }
 
+/** New signs are introduced together, this many at a time. */
+export const MEET_GROUP = 3;
+
+export interface SessionOrder {
+  order: string[];                    // ids in the order they are asked
+  meetAt: Record<number, string[]>;   // index in `order` -> the new signs introduced together there
+}
+
+/**
+ * Reviews first, then the new signs. The new signs are shown in groups of `group`: a group
+ * is introduced together at the index of its first sign and then each sign is asked in turn.
+ * "New" means not yet in the store, so call this before any answer of the session is recorded.
+ */
+export function arrangeSession(store: CollectionStore, ids: readonly string[], group = MEET_GROUP): SessionOrder {
+  const reviews = ids.filter(id => store[id]);
+  const fresh = ids.filter(id => !store[id]);
+  const meetAt: Record<number, string[]> = {};
+  for (let i = 0; i < fresh.length; i += group) meetAt[reviews.length + i] = fresh.slice(i, i + group);
+  return { order: [...reviews, ...fresh], meetAt };
+}
+
 /** Earliest review still in the future (ms from now), or null. */
 export function nextDueIn(store: CollectionStore, ids: readonly string[], now: number): number | null {
   let best: number | null = null;

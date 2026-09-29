@@ -7,3 +7,11 @@
 - Put the recommended option first and mark it "(Recommended)".
 - Ask about the next step, not for permission for the last one. Don't repeat a question the user already answered.
 - Do this even when nothing is blocked. If a real decision blocks the work, ask it first, then still end with the options.
+
+## Version number
+
+- The app version is `version` in `package.json`. It is shown in the app (Menu, bottom of Settings) next to the short commit id of the build.
+- Raise it in every change that goes into a pull request: patch (x.y.Z) for fixes, tooling and refactors; minor (x.Y.0) for new or changed features and screens; major for a redesign or a change that breaks saved data.
+- Use `npm version <patch|minor|major> --no-git-tag-version` so `package-lock.json` stays in sync. One bump per pull request is enough; follow-up commits on the same open PR don't need another.
+- Run `npm run version:check` before pushing. It fails when the version is not higher than on `origin/main`.
+- Say the new version in the pull request description.
