@@ -2,10 +2,13 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { SignCategory, Language, HighScore, TrafficSign } from '@/types/game';
 import { CATEGORY_LABELS_I18N, t } from '@/constants/i18n';
 import MenuScreen from './MenuScreen';
+import CategorySheet from './CategorySheet';
+import { CategoryIcon } from './CategoryIcon';
+import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
   Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
-  ShieldCheck, LayoutGrid, Check, History, ClipboardCheck, type LucideIcon,
+  ShieldCheck, ChevronUp, Check, History, ClipboardCheck, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -35,17 +38,6 @@ interface StartScreenProps {
   onToggleMute: () => void;
 }
 
-/* ── Accent colours (HSL triples so they can take an alpha) ───────── */
-const CATEGORY_HUE: Record<SignCategory | 'all', string> = {
-  all: 'var(--brand)',
-  warning: '38 95% 56%',
-  prohibition: '0 84% 62%',
-  mandatory: '217 91% 64%',
-  priority: '48 96% 55%',
-  information: '199 92% 58%',
-  additional: '250 70% 72%',
-};
-
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
   { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
   { id: 'exam',   icon: ClipboardCheck, labelKey: 'modeExam', descKey: 'modeExamDesc', hue: '84 78% 55%' },
@@ -68,59 +60,6 @@ const findSign = (id: string) => TRAFFIC_SIGNS.find(s => s.id === id);
 const HERO_LEFT = findSign('A15');
 const HERO_CENTER = findSign('B2');
 const HERO_RIGHT = findSign('C31');
-
-/* ── Category icon: the actual shape/colour of that sign family ───── */
-function CategoryIcon({ category, className }: { category: SignCategory | 'all'; className?: string }) {
-  const common = { viewBox: '0 0 24 24', className, 'aria-hidden': true } as const;
-  switch (category) {
-    case 'warning':
-      return (
-        <svg {...common}>
-          <path d="M12 3.2 21.4 19.8H2.6Z" fill="#fff" stroke="#E11D48" strokeWidth="2.6" strokeLinejoin="round" />
-          <rect x="11.1" y="9" width="1.8" height="5.4" rx=".9" fill="#111827" />
-          <circle cx="12" cy="16.6" r="1.1" fill="#111827" />
-        </svg>
-      );
-    case 'prohibition':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8.6" fill="#fff" stroke="#E11D48" strokeWidth="3" />
-          <path d="M6.6 17.4 17.4 6.6" stroke="#E11D48" strokeWidth="2.4" strokeLinecap="round" />
-        </svg>
-      );
-    case 'mandatory':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="10" fill="#1D4ED8" />
-          <path d="M12 17V8m0 0-3.6 3.6M12 8l3.6 3.6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </svg>
-      );
-    case 'priority':
-      return (
-        <svg {...common}>
-          <rect x="5.2" y="5.2" width="13.6" height="13.6" rx="2.2" transform="rotate(45 12 12)" fill="#fff" stroke="#111827" strokeWidth="1.2" />
-          <rect x="7.4" y="7.4" width="9.2" height="9.2" rx="1.4" transform="rotate(45 12 12)" fill="#FBBF24" />
-        </svg>
-      );
-    case 'additional':
-      return (
-        <svg {...common}>
-          <rect x="3" y="7" width="18" height="10" rx="2" fill="#fff" stroke="#111827" strokeWidth="1.6" />
-          <rect x="6.5" y="11" width="11" height="2" rx="1" fill="#111827" />
-        </svg>
-      );
-    case 'information':
-      return (
-        <svg {...common}>
-          <rect x="3" y="3" width="18" height="18" rx="4" fill="#1D4ED8" />
-          <rect x="11.1" y="10.6" width="1.8" height="6" rx=".9" fill="#fff" />
-          <circle cx="12" cy="7.9" r="1.2" fill="#fff" />
-        </svg>
-      );
-    default:
-      return <LayoutGrid className={className} />;
-  }
-}
 
 /* ── Night-road hero stage ───────────────────────────────────────── */
 function RoadStage({ compact }: { compact: boolean }) {
@@ -206,6 +145,7 @@ export default function StartScreen({
   const { theme, toggleTheme } = useTheme();
   const { player } = usePlayer();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const { missions } = useProgress();
   const missionsDone = missions.filter(m => m.done).length;
   const streak = displayStreak(player);
@@ -235,20 +175,16 @@ export default function StartScreen({
     { value: 'hard',   label: t(lang, 'diffHard'),   desc: t(lang, 'ptsHard'),   locked: hardLocked },
   ];
 
-  const categories = (Object.keys(CATEGORY_HUE) as Array<SignCategory | 'all'>).map(value => ({
-    value,
-    label: CATEGORY_LABELS_I18N[lang][value],
-  }));
-
   const statLabel =
     lang === 'ar' ? `${TRAFFIC_SIGNS.length} إشارة` :
     lang === 'sv' ? `${TRAFFIC_SIGNS.length} skyltar` :
     `${TRAFFIC_SIGNS.length} Signs`;
 
+  const categoryCount = new Set(TRAFFIC_SIGNS.map(s => s.category)).size;
   const categoryCountLabel =
-    lang === 'ar' ? '٥ فئات' :
-    lang === 'sv' ? '5 kategorier' :
-    '5 Categories';
+    lang === 'ar' ? `${categoryCount.toLocaleString('ar-EG')} فئات` :
+    lang === 'sv' ? `${categoryCount} kategorier` :
+    `${categoryCount} Categories`;
 
   const handleDifficultyClick = (value: Difficulty, locked: boolean) => {
     if (locked) {
@@ -274,6 +210,8 @@ export default function StartScreen({
   };
 
   const activeMode = MODES.find(m => m.id === selectedMode) ?? MODES[0];
+  // Daily, the mock exam and the mistakes review have their own fixed set of signs
+  const usesCategory = selectedMode !== 'review' && selectedMode !== 'exam' && selectedMode !== 'daily';
   const startLabel =
     selectedMode === 'quiz'   ? t(lang, 'startQuiz') :
     selectedMode === 'review' ? t(lang, 'modeReview') :
@@ -486,45 +424,6 @@ export default function StartScreen({
         </section>
         )}
 
-        {/* Category */}
-        {selectedMode !== 'review' && selectedMode !== 'exam' && (
-        <section className="rise-in" style={{ '--rise-delay': '0.28s' } as CSSProperties}>
-          <SectionTitle>{t(lang, 'chooseCategory')}</SectionTitle>
-          <div className="grid grid-cols-2 gap-2.5">
-            {categories.map(({ value, label }) => {
-              const isSelected = selectedCategory === value;
-              const hue = CATEGORY_HUE[value];
-              return (
-                <button
-                  key={value}
-                  onClick={() => setSelectedCategory(value)}
-                  aria-pressed={isSelected}
-                  className={cn(
-                    'flex items-center gap-2.5 ps-2.5 pe-3 min-h-12 py-1.5 rounded-2xl text-start transition-all duration-200 active:scale-[0.97]',
-                    !isSelected && 'glass hover:-translate-y-0.5',
-                  )}
-                  style={isSelected ? {
-                    background: `hsl(${hue} / 0.16)`,
-                    border: `1px solid hsl(${hue} / 0.8)`,
-                    boxShadow: `0 10px 26px -12px hsl(${hue} / 0.7)`,
-                  } : undefined}
-                >
-                  <span className="w-8 h-8 rounded-xl grid place-items-center bg-white/90 shadow-sm">
-                    <CategoryIcon category={value} className="w-[22px] h-[22px] text-slate-700" />
-                  </span>
-                  <span className={cn(
-                    'text-[13px] font-semibold leading-tight',
-                    isSelected ? 'text-[hsl(var(--foreground))]' : 'text-[hsl(var(--muted-foreground))]',
-                  )}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-        )}
-
         {/* Difficulty — quiz and review */}
         {(selectedMode === 'quiz' || selectedMode === 'review') && (
           <section className="rise-in" style={{ '--rise-delay': '0.05s' } as CSSProperties}>
@@ -587,17 +486,38 @@ export default function StartScreen({
 
         {/* Start CTA — sticks to the bottom while you configure */}
         <div className="sticky bottom-3 z-30 space-y-2 pt-1">
-          <button
-            onClick={handleStart}
-            disabled={selectedMode === 'review' && mistakeCount === 0}
-            className={cn(
-              'w-full h-16 flex items-center justify-center gap-3 rounded-[22px] font-display font-bold text-lg bg-brand-gradient text-[hsl(var(--primary-foreground))] shadow-glow transition-all hover:brightness-110 active:scale-[0.98]',
-              selectedMode === 'review' && mistakeCount === 0 && 'opacity-45 grayscale cursor-not-allowed hover:brightness-100 active:scale-100',
+          <div className="flex gap-2">
+            <button
+              onClick={handleStart}
+              disabled={selectedMode === 'review' && mistakeCount === 0}
+              className={cn(
+                'flex-1 min-w-0 h-16 flex items-center justify-center gap-3 rounded-[22px] font-display font-bold text-lg bg-brand-gradient text-[hsl(var(--primary-foreground))] shadow-glow transition-all hover:brightness-110 active:scale-[0.98]',
+                selectedMode === 'review' && mistakeCount === 0 && 'opacity-45 grayscale cursor-not-allowed hover:brightness-100 active:scale-100',
+              )}
+            >
+              <activeMode.icon className={cn('w-5 h-5 shrink-0', selectedMode === 'quiz' && 'fill-current')} />
+              <span className="truncate">{startLabel}</span>
+            </button>
+
+            {/* Current category; opens the picker */}
+            {usesCategory && (
+              <button
+                onClick={() => setCategoryOpen(true)}
+                aria-haspopup="dialog"
+                aria-label={`${t(lang, 'categoryShort')}: ${CATEGORY_LABELS_I18N[lang][selectedCategory]}`}
+                className="glass h-16 w-[104px] shrink-0 rounded-[22px] flex flex-col items-center justify-center gap-1 px-1.5 transition-all active:scale-[0.97]"
+                style={selectedCategory !== 'all' ? { border: `1px solid hsl(${CATEGORY_HUE[selectedCategory]} / 0.8)` } : undefined}
+              >
+                <span className="w-7 h-7 rounded-lg grid place-items-center bg-white/90 shadow-sm">
+                  <CategoryIcon category={selectedCategory} className="w-[18px] h-[18px] text-slate-700" />
+                </span>
+                <span className="flex items-center gap-0.5 max-w-full text-[11px] font-bold leading-none text-[hsl(var(--foreground))]">
+                  <span className="truncate">{CATEGORY_LABELS_I18N[lang][selectedCategory]}</span>
+                  <ChevronUp className="w-3 h-3 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                </span>
+              </button>
             )}
-          >
-            <activeMode.icon className={cn('w-5 h-5', selectedMode === 'quiz' && 'fill-current')} />
-            {startLabel}
-          </button>
+          </div>
 
           {selectedMode === 'review' && (
             <p className="text-center text-xs text-[hsl(var(--muted-foreground))]">
@@ -617,6 +537,14 @@ export default function StartScreen({
           )}
         </div>
       </main>
+
+      <CategorySheet
+        open={categoryOpen}
+        onOpenChange={setCategoryOpen}
+        lang={lang}
+        selected={selectedCategory}
+        onSelect={setSelectedCategory}
+      />
 
       <MenuScreen
         open={menuOpen}
