@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { SignCategory, Language, HighScore, TrafficSign } from '@/types/game';
 import { CATEGORY_LABELS_I18N, t } from '@/constants/i18n';
 import MenuScreen from './MenuScreen';
@@ -8,7 +8,7 @@ import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
   Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
-  ShieldCheck, ChevronUp, ChevronRight, Check, History, ClipboardCheck, type LucideIcon,
+  ShieldCheck, ChevronUp, ChevronDown, ChevronRight, Check, History, ClipboardCheck, Gamepad2, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -39,23 +39,22 @@ interface StartScreenProps {
 }
 
 const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string; hue: string }[] = [
-  { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
+  { id: 'learn',  icon: Layers,   labelKey: 'modeLearn',  descKey: 'modeLearnDesc',  hue: '199 92% 58%' },
   { id: 'exam',   icon: ClipboardCheck, labelKey: 'modeExam', descKey: 'modeExamDesc', hue: '84 78% 55%' },
+  { id: 'review', icon: History,  labelKey: 'modeReview', descKey: 'modeReviewDesc', hue: '350 89% 64%' },
+  { id: 'quiz',   icon: Play,     labelKey: 'modeQuiz',   descKey: 'modeQuizDesc',   hue: 'var(--brand)' },
   { id: 'daily',  icon: Calendar, labelKey: 'modeDaily',  descKey: 'modeDailyDesc',  hue: '32 96% 58%' },
   { id: 'blitz',  icon: Zap,      labelKey: 'modeBlitz',  descKey: 'modeBlitzDesc',  hue: '52 98% 56%' },
   { id: 'memory', icon: Brain,    labelKey: 'modeMemory', descKey: 'modeMemoryDesc', hue: '266 90% 70%' },
   { id: 'match',  icon: Puzzle,   labelKey: 'modeMatch',  descKey: 'modeMatchDesc',  hue: '330 88% 66%' },
-  { id: 'learn',  icon: Layers,   labelKey: 'modeLearn',  descKey: 'modeLearnDesc',  hue: '199 92% 58%' },
-  { id: 'review', icon: History,  labelKey: 'modeReview', descKey: 'modeReviewDesc', hue: '350 89% 64%' },
 ];
 
-/* Mistakes review is only worth a prominent slot (right under the two wide cards) once there is something to review */
-const orderModes = (hasMistakes: boolean) => {
-  if (!hasMistakes) return MODES;
-  const review = MODES.find(m => m.id === 'review');
-  const rest = MODES.filter(m => m.id !== 'review');
-  return review ? [...rest.slice(0, 2), review, ...rest.slice(2)] : MODES;
-};
+/* The four games share one expandable card, so the mode list stays short */
+const GAME_IDS: GameMode[] = ['daily', 'blitz', 'memory', 'match'];
+const GAMES_HUE = '292 84% 66%';
+/* Space kept free above the sticky start bar when scrolling revealed cards into view */
+const START_BAR_CLEARANCE = 128;
+const modeOf = (id: GameMode) => MODES.find(m => m.id === id) ?? MODES[0];
 
 const DIFFICULTY_HUE: Record<Difficulty, string> = {
   easy: '152 70% 50%',
@@ -142,12 +141,105 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
+/* ── Mode card ───────────────────────────────────────────────────── */
+interface ModeCardProps {
+  icon: LucideIcon;
+  hue: string;
+  title: string;
+  desc: string;
+  wide?: boolean;
+  active?: boolean;
+  /** aria-pressed for cards that select a mode; leave undefined for cards that open a screen or expand */
+  pressed?: boolean;
+  expanded?: boolean;
+  badge?: number;
+  fillIcon?: boolean;
+  /** Replaces the selected check in the corner (open / expand arrows) */
+  corner?: ReactNode;
+  onClick: () => void;
+  style?: CSSProperties;
+  className?: string;
+}
+
+function ModeCard({
+  icon: Icon, hue, title, desc, wide, active, pressed, expanded, badge, fillIcon, corner, onClick, style, className,
+}: ModeCardProps) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={pressed}
+      aria-expanded={expanded}
+      className={cn(
+        'relative overflow-hidden text-start rounded-3xl transition-all duration-200 active:scale-[0.98]',
+        wide ? 'col-span-2 p-4 flex items-center gap-4' : 'p-3.5 flex flex-col gap-3',
+        !active && 'glass hover:-translate-y-0.5',
+        className,
+      )}
+      style={{
+        ...(active ? {
+          background: `linear-gradient(135deg, hsl(${hue} / 0.24), hsl(var(--accent-2) / 0.12))`,
+          border: `1px solid hsl(${hue} / 0.75)`,
+          boxShadow: `0 12px 34px -12px hsl(${hue} / 0.6)`,
+          WebkitBackdropFilter: 'blur(16px)',
+          backdropFilter: 'blur(16px)',
+        } : undefined),
+        ...style,
+      }}
+    >
+      <span
+        className={cn('grid place-items-center rounded-2xl shrink-0', wide ? 'w-14 h-14' : 'w-11 h-11')}
+        style={{
+          background: `linear-gradient(135deg, hsl(${hue}), hsl(${hue} / 0.62))`,
+          boxShadow: `0 8px 20px -6px hsl(${hue} / 0.7)`,
+        }}
+      >
+        <Icon className={cn('text-[hsl(var(--primary-foreground))]', wide ? 'w-6 h-6' : 'w-5 h-5', fillIcon && 'fill-current')} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={cn('flex items-center gap-1.5 font-display font-bold text-[hsl(var(--foreground))] leading-tight', wide ? 'text-lg' : 'text-[15px]')}>
+          {title}
+          {badge !== undefined && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-rose-500/25 text-rose-300 font-extrabold tabular-nums">{badge}</span>
+          )}
+        </span>
+        <span className="block text-xs text-[hsl(var(--muted-foreground))] mt-1 leading-snug">
+          {desc}
+        </span>
+      </span>
+      {corner ? (
+        <span
+          className="absolute top-3 end-3 w-5 h-5 rounded-full grid place-items-center bg-[hsl(var(--foreground))]/10"
+          aria-hidden="true"
+        >
+          {corner}
+        </span>
+      ) : active && (
+        <span
+          className="absolute top-3 end-3 w-5 h-5 rounded-full grid place-items-center"
+          style={{ background: `hsl(${hue})` }}
+        >
+          <Check className="w-3 h-3 text-[hsl(var(--primary-foreground))]" strokeWidth={3.5} />
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function StartScreen({
   onStart, onStartMode, scores, onClearScores, lang, onLangChange, progression, muted, onToggleMute,
 }: StartScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<SignCategory | 'all'>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
-  const [selectedMode, setSelectedMode] = useState<GameMode>('quiz');
+  const [selectedMode, setSelectedMode] = useState<GameMode>('learn');
+  const [gamesOpen, setGamesOpen] = useState(false);
+  const gamesEndRef = useRef<HTMLDivElement>(null);
+  // The games card sits low on the page: bring the cards it reveals above the sticky start bar
+  useEffect(() => {
+    const end = gamesEndRef.current;
+    if (!gamesOpen || !end || end.getBoundingClientRect().bottom + START_BAR_CLEARANCE <= window.innerHeight) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    end.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'end' });
+  }, [gamesOpen]);
   const [lockedBump, setLockedBump] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { theme, toggleTheme } = useTheme();
@@ -217,7 +309,9 @@ export default function StartScreen({
     }
   };
 
-  const activeMode = MODES.find(m => m.id === selectedMode) ?? MODES[0];
+  const activeMode = modeOf(selectedMode);
+  // A game picked inside the collapsed "Games" card is still shown on it
+  const selectedGame = GAME_IDS.includes(selectedMode) ? modeOf(selectedMode) : null;
   // Daily, the mock exam and the mistakes review have their own fixed set of signs
   const usesCategory = selectedMode !== 'review' && selectedMode !== 'exam' && selectedMode !== 'daily';
   const startLabel =
@@ -333,70 +427,60 @@ export default function StartScreen({
         <section className="rise-in" style={{ '--rise-delay': '0.16s' } as CSSProperties}>
           <SectionTitle>{t(lang, 'chooseMode')}</SectionTitle>
           <div className="grid grid-cols-2 gap-3">
-            {orderModes(mistakeCount > 0).map(m => {
-              const isActive = selectedMode === m.id;
-              const Icon = m.icon;
-              const isQuiz = m.id === 'quiz';
-              const isWide = isQuiz || m.id === 'exam';
-              // No options to choose and an intro screen of their own: open straight away
-              const opensDirectly = m.id === 'exam' || m.id === 'daily';
+            {/* Mistakes review only has a slot once there is something to review */}
+            {MODES.filter(m => ['learn', 'exam', 'review', 'quiz'].includes(m.id) && (m.id !== 'review' || mistakeCount > 0)).map(m => (
+              <ModeCard
+                key={m.id}
+                wide
+                icon={m.icon}
+                hue={m.hue}
+                title={t(lang, m.labelKey)}
+                desc={t(lang, m.descKey)}
+                active={selectedMode === m.id}
+                // The exam has no options to choose and an intro screen of its own: open straight away
+                pressed={m.id === 'exam' ? undefined : selectedMode === m.id}
+                corner={m.id === 'exam' ? <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" /> : undefined}
+                badge={m.id === 'review' ? mistakeCount : undefined}
+                fillIcon={m.id === 'quiz'}
+                onClick={() => (m.id === 'exam' ? onStartMode('exam', selectedCategory) : setSelectedMode(m.id))}
+              />
+            ))}
+
+            {/* The remaining games share one expandable card */}
+            <ModeCard
+              wide
+              icon={Gamepad2}
+              hue={GAMES_HUE}
+              title={t(lang, 'modeGames')}
+              desc={selectedGame ? t(lang, selectedGame.labelKey) : GAME_IDS.map(id => t(lang, modeOf(id).labelKey)).join(' · ')}
+              active={!!selectedGame}
+              expanded={gamesOpen}
+              corner={gamesOpen
+                ? <ChevronUp className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />
+                : <ChevronDown className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />}
+              onClick={() => setGamesOpen(open => !open)}
+            />
+            {gamesOpen && GAME_IDS.map((id, i) => {
+              const m = modeOf(id);
+              // Daily has an intro screen of its own and opens straight away
+              const opensDirectly = id === 'daily';
               return (
-                <button
-                  key={m.id}
-                  onClick={() => (opensDirectly ? onStartMode(m.id as 'exam' | 'daily', selectedCategory) : setSelectedMode(m.id))}
-                  aria-pressed={opensDirectly ? undefined : isActive}
-                  className={cn(
-                    'relative overflow-hidden text-start rounded-3xl transition-all duration-200 active:scale-[0.98]',
-                    isWide ? 'col-span-2 p-4 flex items-center gap-4' : 'p-3.5 flex flex-col gap-3',
-                    !isActive && 'glass hover:-translate-y-0.5',
-                  )}
-                  style={isActive ? {
-                    background: `linear-gradient(135deg, hsl(${m.hue} / 0.24), hsl(var(--accent-2) / 0.12))`,
-                    border: `1px solid hsl(${m.hue} / 0.75)`,
-                    boxShadow: `0 12px 34px -12px hsl(${m.hue} / 0.6)`,
-                    WebkitBackdropFilter: 'blur(16px)',
-                    backdropFilter: 'blur(16px)',
-                  } : undefined}
-                >
-                  <span
-                    className={cn('grid place-items-center rounded-2xl shrink-0', isWide ? 'w-14 h-14' : 'w-11 h-11')}
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${m.hue}), hsl(${m.hue} / 0.62))`,
-                      boxShadow: `0 8px 20px -6px hsl(${m.hue} / 0.7)`,
-                    }}
-                  >
-                    <Icon className={cn('text-[hsl(var(--primary-foreground))]', isWide ? 'w-6 h-6' : 'w-5 h-5', isQuiz && 'fill-current')} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className={cn('flex items-center gap-1.5 font-display font-bold text-[hsl(var(--foreground))] leading-tight', isWide ? 'text-lg' : 'text-[15px]')}>
-                      {t(lang, m.labelKey)}
-                      {m.id === 'review' && mistakeCount > 0 && (
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-rose-500/25 text-rose-300 font-extrabold tabular-nums">{mistakeCount}</span>
-                      )}
-                    </span>
-                    <span className="block text-xs text-[hsl(var(--muted-foreground))] mt-1 leading-snug">
-                      {t(lang, m.descKey)}
-                    </span>
-                  </span>
-                  {isActive && (
-                    <span
-                      className="absolute top-3 end-3 w-5 h-5 rounded-full grid place-items-center"
-                      style={{ background: `hsl(${m.hue})` }}
-                    >
-                      <Check className="w-3 h-3 text-[hsl(var(--primary-foreground))]" strokeWidth={3.5} />
-                    </span>
-                  )}
-                  {opensDirectly && (
-                    <span
-                      className="absolute top-3 end-3 w-5 h-5 rounded-full grid place-items-center bg-[hsl(var(--foreground))]/10"
-                      aria-hidden="true"
-                    >
-                      <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" />
-                    </span>
-                  )}
-                </button>
+                <ModeCard
+                  key={id}
+                  icon={m.icon}
+                  hue={m.hue}
+                  title={t(lang, m.labelKey)}
+                  desc={t(lang, m.descKey)}
+                  active={selectedMode === id}
+                  pressed={opensDirectly ? undefined : selectedMode === id}
+                  corner={opensDirectly ? <ChevronRight className="w-3 h-3 text-[hsl(var(--muted-foreground))] rtl:rotate-180" /> : undefined}
+                  className="rise-in"
+                  style={{ '--rise-delay': `${i * 0.04}s` } as CSSProperties}
+                  onClick={() => (opensDirectly ? onStartMode('daily', selectedCategory) : setSelectedMode(id))}
+                />
               );
             })}
+            <div ref={gamesEndRef} aria-hidden="true" className="col-span-2 h-0" style={{ scrollMarginBottom: START_BAR_CLEARANCE }} />
           </div>
         </section>
 
