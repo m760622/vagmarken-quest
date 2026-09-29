@@ -126,7 +126,11 @@ export default function RevealGame({ lang, category, onHome, muted = false, onTo
     setMaxStreak(m => Math.max(m, newStreak));
     setScore(s => s + points);
     if (correct) setCorrectCount(c => c + 1);
-    recordEvent({ type: 'answer', signId: round.sign.id, correct, streak: correct ? newStreak : undefined });
+    recordEvent({
+      type: 'answer', signId: round.sign.id, correct, streak: correct ? newStreak : undefined,
+      pickedId: !correct && choiceId ? choiceId : undefined,
+      otherIds: correct ? round.choices.filter(c => c.id !== round.sign.id).map(c => c.id) : undefined,
+    });
     if (correct) playCorrect(); else playWrong();
 
     // Enough time to read the name and meaning of a sign that was missed

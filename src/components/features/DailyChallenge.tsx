@@ -96,7 +96,12 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
   const handleAnswer = (chosenId: string) => {
     if (showFeedback) return;
     const correct = chosenId === questions[current].sign.id;
-    recordEvent({ type: 'answer', signId: questions[current].sign.id, correct });
+    const q = questions[current];
+    recordEvent({
+      type: 'answer', signId: q.sign.id, correct,
+      pickedId: correct ? undefined : chosenId,
+      otherIds: correct ? q.options.filter(o => o.id !== q.sign.id).map(o => o.id) : undefined,
+    });
     setSelected(chosenId);
     setShowFeedback(true);
     if (correct) playCorrect(); else playWrong();

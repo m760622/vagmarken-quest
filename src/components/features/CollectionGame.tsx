@@ -161,7 +161,11 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
     const early = !!current && current.due > Date.now();
     const { before, after } = recordCollectionAnswer(card.id, correct);
     const newStreak = correct ? streak + 1 : 0;
-    recordEvent({ type: 'answer', signId: card.id, correct, streak: correct ? newStreak : undefined });
+    recordEvent({
+      type: 'answer', signId: card.id, correct, streak: correct ? newStreak : undefined,
+      pickedId: correct ? undefined : choiceId,
+      otherIds: correct ? choices.filter(c => c.id !== card.id).map(c => c.id) : undefined,
+    });
     if (correct) playCorrect(); else playWrong();
 
     const rec: Answered = { id: card.id, correct, before, after, isNew: newIds.has(card.id), early: early && correct };
@@ -171,7 +175,7 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
     setResults(r => [...r, rec]);
     setLast(rec);
     setStep('feedback');
-  }, [step, card, streak, newIds, playCorrect, playWrong]);
+  }, [step, card, choices, streak, newIds, playCorrect, playWrong]);
 
   const nextCard = useCallback(() => {
     if (!plan) return;
