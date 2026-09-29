@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import {
-  applyAnswer, collectionStats, dueWithin, INTERVAL_MS, MAX_LEVEL, nextDueIn, planSession, recordCollectionAnswer,
-  waitParts, type CollectionStore,
+  applyAnswer, arrangeSession, collectionStats, dueWithin, INTERVAL_MS, MAX_LEVEL, MEET_GROUP, nextDueIn, planSession,
+  recordCollectionAnswer, waitParts, type CollectionStore,
 } from '@/lib/collection';
 import { seeded } from './rng';
 
@@ -139,6 +139,48 @@ describe('planSession', () => {
     const warning = all.filter(s => s.category === 'warning');
     const plan = planSession({}, warning, {}, NOW, seeded(6));
     expect(plan.ids.every(id => warning.some(w => w.id === id))).toBe(true);
+  });
+});
+
+describe('arrangeSession', () => {
+  const store: CollectionStore = { A1: card(2, NOW - 1000), A2: card(3, NOW - 2000) };
+
+  it('puts the reviews first and introduces the new signs in groups of 3', () => {
+    const { order, meetAt } = arrangeSession(store, ['N1', 'A1', 'N2', 'N3', 'A2', 'N4', 'N5']);
+    expect(order).toEqual(['A1', 'A2', 'N1', 'N2', 'N3', 'N4', 'N5']);
+    expect(meetAt).toEqual({ 2: ['N1', 'N2', 'N3'], 5: ['N4', 'N5'] });
+  });
+
+  it('introduces 5 new signs of a first session as 3 + 2', () => {
+    const { order, meetAt } = arrangeSession({}, ['N1', 'N2', 'N3', 'N4', 'N5']);
+    expect(order).toHaveLength(5);
+    expect(Object.keys(meetAt).map(Number)).toEqual([0, 3]);
+    expect(meetAt[0]).toHaveLength(3);
+    expect(meetAt[3]).toHaveLength(2);
+  });
+
+  it('has no introduction when every sign is a review', () => {
+    const { order, meetAt } = arrangeSession(store, ['A1', 'A2']);
+    expect(order).toEqual(['A1', 'A2']);
+    expect(meetAt).toEqual({});
+  });
+
+  it('shows a lone new sign on its own', () => {
+    expect(arrangeSession(store, ['A1', 'N1']).meetAt).toEqual({ 1: ['N1'] });
+  });
+
+  it('keeps every sign exactly once and every new sign in exactly one group', () => {
+    const plan = planSession({ A1: card(2, NOW - 1000) }, all, {}, NOW, seeded(11));
+    const { order, meetAt } = arrangeSession({ A1: card(2, NOW - 1000) }, plan.ids);
+    expect(new Set(order)).toHaveProperty('size', plan.ids.length);
+    expect([...order].sort()).toEqual([...plan.ids].sort());
+    const met = Object.values(meetAt).flat();
+    expect(new Set(met)).toHaveProperty('size', met.length);
+    expect(met.length).toBe(plan.newCount);
+    Object.entries(meetAt).forEach(([at, group]) => {
+      expect(group.length).toBeLessThanOrEqual(MEET_GROUP);
+      expect(order.slice(Number(at), Number(at) + group.length)).toEqual(group);   // asked right after the introduction
+    });
   });
 });
 

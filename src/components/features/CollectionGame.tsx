@@ -6,7 +6,7 @@
  * a miss drops it two levels. Level 5 is "mastered".
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import { Language, SignCategory, TrafficSign } from '@/types/game';
 import { CATEGORY_LABELS_I18N, t } from '@/constants/i18n';
@@ -23,7 +23,7 @@ import { getMistakes } from '@/lib/mistakes';
 import { useAudio } from '@/hooks/useAudio';
 import { buildChoices } from '@/lib/gameLogic';
 import {
-  MAX_LEVEL, collectionStats, dueWithin, getCollection, nextDueIn, planSession, recordCollectionAnswer, waitParts,
+  MAX_LEVEL, arrangeSession, collectionStats, dueWithin, getCollection, nextDueIn, planSession, recordCollectionAnswer, waitParts,
   type SessionPlan,
 } from '@/lib/collection';
 import { signDescription, signName, signNameSecondary } from '@/lib/signName';
@@ -68,6 +68,12 @@ function waitText(ms: number, lang: Language): string {
   return `in ${n} ${unit === 'min' ? 'min' : unit === 'h' ? 'h' : n === 1 ? 'day' : 'days'}`;
 }
 
+function newSignsLabel(n: number, lang: Language): string {
+  if (lang === 'ar') return n === 1 ? 'إشارة جديدة' : n === 2 ? 'إشارتان جديدتان' : `${n} إشارات جديدة`;
+  if (lang === 'sv') return n === 1 ? 'Ny skylt' : `${n} nya skyltar`;
+  return n === 1 ? 'New sign' : `${n} new signs`;
+}
+
 const tileClass = (level: number) =>
   level >= MAX_LEVEL ? 'border-emerald-400/80 bg-emerald-500/10'
   : level >= 3 ? 'border-sky-400/70 bg-sky-500/5'
@@ -87,6 +93,7 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [plan, setPlan]         = useState<SessionPlan | null>(null);
   const [newIds, setNewIds]     = useState<Set<string>>(new Set());
+  const [meetAt, setMeetAt]       = useState<Record<number, string[]>>({});
   const [cursor, setCursor]     = useState(0);
   const [step, setStep]         = useState<Step>('ask');
   const [choices, setChoices]   = useState<TrafficSign[]>([]);
@@ -106,14 +113,26 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
   const cardAt = (i: number) => (plan ? TRAFFIC_SIGNS.find(s => s.id === plan.ids[i]) : undefined);
   const card = cardAt(cursor);
 
-  const openCard = useCallback((i: number, ids: string[], fresh: Set<string>) => {
+  // Small phones: start each card from the top, and bring the result card (and its Next button) into view
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (view !== 'session') return;
+    if (step === 'feedback') {
+      const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      feedbackRef.current?.scrollIntoView({ block: 'nearest', behavior: calm ? 'auto' : 'smooth' });
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+  }, [view, step, cursor]);
+
+  const openCard = useCallback((i: number, ids: string[], groups: Record<number, string[]>) => {
     const sign = TRAFFIC_SIGNS.find(s => s.id === ids[i]);
     if (!sign) return;
     setCursor(i);
     setChoices(buildChoices(sign, TRAFFIC_SIGNS));
     setPicked(null);
     setLast(null);
-    setStep(fresh.has(sign.id) ? 'meet' : 'ask');
+    setStep(groups[i] ? 'meet' : 'ask');
   }, []);
 
   const startSession = useCallback(() => {
@@ -121,15 +140,17 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
     const p = planSession(getCollection(), pool, getMistakes(), clock);
     if (p.ids.length === 0) return;
     const fresh = new Set(p.ids.filter(id => !getCollection()[id]));
+    const { order, meetAt: groups } = arrangeSession(getCollection(), p.ids);
     setNow(clock);
-    setPlan(p);
+    setPlan({ ...p, ids: order });
     setNewIds(fresh);
+    setMeetAt(groups);
     setResults([]);
     setStreak(0);
     setMaxStreak(0);
     setSelectedId(null);
     setView('session');
-    openCard(0, p.ids, fresh);
+    openCard(0, order, groups);
   }, [pool, openCard]);
 
   const choose = useCallback((choiceId: string) => {
@@ -158,8 +179,8 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
       setView('summary');
       return;
     }
-    openCard(cursor + 1, plan.ids, newIds);
-  }, [plan, cursor, newIds, openCard]);
+    openCard(cursor + 1, plan.ids, meetAt);
+  }, [plan, cursor, meetAt, openCard]);
 
   const backToAlbum = useCallback(() => {
     setNow(Date.now());
@@ -275,7 +296,6 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
 
   /* ── Session: meet, ask, feedback ────────────────────────────── */
   if (view === 'session' && plan && card) {
-    const secondary = signNameSecondary(card, lang);
     const wasRight = step === 'feedback' && last?.correct;
     return (
       <div className="min-h-screen flex flex-col" dir={isRtl ? 'rtl' : 'ltr'}>
@@ -296,25 +316,50 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
         </div>
 
         <div className="px-4 pb-6 max-w-lg mx-auto w-full flex flex-col items-center">
-          {step === 'meet' && (
-            <div className="w-full rounded-3xl border border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] px-5 py-6 text-center pop-in">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-display font-extrabold mb-4" style={{ background: 'hsl(12 90% 64% / 0.16)', color: CORAL }}>
-                <Sparkles className="w-3.5 h-3.5" />
-                {L('New sign', 'Ny skylt', 'إشارة جديدة')}
-              </span>
-              <div className="flex justify-center mb-4"><SignDisplay sign={card} size="lg" /></div>
-              <p className="text-xl font-display font-extrabold text-[hsl(var(--foreground))] leading-snug">{signName(card, lang)}</p>
-              {secondary && <bdi dir="ltr" className="block text-sm font-semibold opacity-75 mt-1">{secondary}</bdi>}
-              <p className="text-sm leading-relaxed text-[hsl(var(--muted-foreground))] mt-3">{signDescription(card, lang)}</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]/70 mt-3">{labels[card.category]}</p>
-              <button
-                onClick={() => setStep('ask')}
-                className="mt-5 w-full py-3.5 rounded-2xl btn-hue hue-coral font-display font-extrabold active:scale-[0.98] transition-all"
-              >
-                {L('Got it, quiz me', 'Uppfattat, testa mig', 'فهمت، اختبرني')}
-              </button>
-            </div>
-          )}
+          {step === 'meet' && (() => {
+            // the new signs of this group are shown together, then asked one by one in the same order
+            const group = (meetAt[cursor] ?? [card.id])
+              .map(id => TRAFFIC_SIGNS.find(sg => sg.id === id))
+              .filter((sg): sg is TrafficSign => !!sg);
+            return (
+              <>
+                <div className="w-full rounded-3xl border border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] px-4 py-5 pop-in">
+                  <div className="text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-display font-extrabold" style={{ background: 'hsl(12 90% 64% / 0.16)', color: CORAL }}>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {newSignsLabel(group.length, lang)}
+                    </span>
+                  </div>
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {group.map(sg => {
+                      const sub = signNameSecondary(sg, lang);
+                      return (
+                        <li key={sg.id} className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--option-border))] bg-[hsl(var(--background))]/40 p-3 text-start">
+                          <div className="shrink-0 w-[76px] flex justify-center"><SignDisplay sign={sg} size="sm" /></div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-display font-extrabold text-[hsl(var(--foreground))] leading-snug">{signName(sg, lang)}</p>
+                            {sub && <bdi dir="ltr" className="block text-xs font-semibold opacity-75 mt-0.5">{sub}</bdi>}
+                            <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))] mt-1.5">{signDescription(sg, lang)}</p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+                {/* stays in reach even when three signs push the page below the fold */}
+                <div className="sticky bottom-3 mt-4 w-full">
+                  <button
+                    onClick={() => setStep('ask')}
+                    className="w-full py-3.5 rounded-2xl btn-hue hue-coral font-display font-extrabold shadow-lg active:scale-[0.98] transition-all"
+                  >
+                    {group.length > 1
+                      ? L('Got them, quiz me', 'Uppfattat, testa mig', 'فهمتها، اختبرني')
+                      : L('Got it, quiz me', 'Uppfattat, testa mig', 'فهمت، اختبرني')}
+                  </button>
+                </div>
+              </>
+            );
+          })()}
 
           {step !== 'meet' && (
             <>
@@ -351,7 +396,7 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
               </div>
 
               {step === 'feedback' && last && (
-                <div className="w-full mt-3 rounded-2xl border border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] px-4 py-3" aria-live="polite">
+                <div ref={feedbackRef} className="w-full mt-3 rounded-2xl border border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] px-4 py-3" aria-live="polite">
                   <p className={cn('text-sm font-display font-extrabold mb-1', wasRight ? 'text-emerald-300' : 'text-rose-300')}>
                     {wasRight ? L('Correct!', 'Rätt!', 'صحيح!') : L('Not quite', 'Inte riktigt', 'ليست صحيحة')}
                     {!wasRight && <span className="font-semibold text-[hsl(var(--foreground))]"> · {signName(card, lang)}</span>}
