@@ -114,3 +114,95 @@ export function buildOddRounds(
   }
   return rounds;
 }
+
+/* ── Twins ───────────────────────────────────────────────────────── */
+
+export interface TwinRound {
+  target: TrafficSign;       // the sign that is named in the question
+  options: TrafficSign[];    // the target and its look-alikes, shuffled (2 or 3)
+  lookAlike: boolean;        // every option has the target's shape and colour
+}
+
+/**
+ * Signs that can be mistaken for `sign`, best first: same shape and colour, then same
+ * category, then same shape. Signs with the same name are never listed.
+ */
+export function lookAlikes(sign: TrafficSign, all: readonly TrafficSign[], rng: Rng = Math.random): TrafficSign[] {
+  const others = all.filter(s => s.id !== sign.id && s.name !== sign.name);
+  const close = shuffle(others.filter(s => s.shape === sign.shape && s.color === sign.color), rng);
+  const sameCategory = shuffle(others.filter(s => s.category === sign.category && !close.includes(s)), rng);
+  const sameShape = shuffle(others.filter(s => s.shape === sign.shape && !close.includes(s) && !sameCategory.includes(s)), rng);
+  return [...close, ...sameCategory, ...sameShape];
+}
+
+/**
+ * `count` rounds, each with a different target. Early rounds have two signs to choose from,
+ * from `threeFrom` on there are three. The foils are look-alikes of the target.
+ */
+export function buildTwinRounds(
+  all: readonly TrafficSign[],
+  category: SignCategory | 'all',
+  count = 10,
+  rng: Rng = Math.random,
+  threeFrom = Math.ceil(count * 0.4),
+): TwinRound[] {
+  const targets = shuffle(signPool(all, category, count, rng), rng).slice(0, count);
+  return targets.map((target, i) => {
+    const size = i >= threeFrom ? 3 : 2;
+    const foils: TrafficSign[] = [];
+    for (const s of lookAlikes(target, all, rng)) {
+      if (foils.length === size - 1) break;
+      if (!foils.some(f => f.name === s.name)) foils.push(s);
+    }
+    return {
+      target,
+      options: shuffle([target, ...foils], rng),
+      lookAlike: foils.every(f => f.shape === target.shape && f.color === target.color),
+    };
+  });
+}
+
+/* ── Classify ────────────────────────────────────────────────────── */
+
+/** The order the categories are offered in. */
+export const CLASSIFY_ORDER: SignCategory[] = ['warning', 'prohibition', 'mandatory', 'information', 'priority', 'additional'];
+
+export interface ClassifyRound {
+  sign: TrafficSign;
+  answer: SignCategory;
+}
+
+/**
+ * `count` rounds. The categories take turns (in a shuffled order, again and again), so the small
+ * ones (7 priority signs, 5 plates) come up as often as the big ones instead of almost never.
+ */
+export function buildClassifyRounds(all: readonly TrafficSign[], count = 10, rng: Rng = Math.random): ClassifyRound[] {
+  const byCat = new Map<SignCategory, TrafficSign[]>();
+  for (const s of all) byCat.set(s.category, [...(byCat.get(s.category) ?? []), s]);
+  const cats = CLASSIFY_ORDER.filter(c => (byCat.get(c) ?? []).length > 0);
+  const queues = new Map(cats.map(c => [c, shuffle(byCat.get(c)!, rng)] as const));
+
+  const rounds: ClassifyRound[] = [];
+  let turn: SignCategory[] = [];
+  while (rounds.length < count && cats.length > 0) {
+    if (turn.length === 0) turn = shuffle(cats, rng);
+    const c = turn.pop()!;
+    const queue = queues.get(c)!;
+    if (queue.length === 0) queue.push(...shuffle(byCat.get(c)!, rng));   // small category used up: start over
+    rounds.push({ sign: queue.pop()!, answer: c });
+  }
+  return shuffle(rounds, rng);
+}
+
+export interface LookFact {
+  total: number;        // signs with this shape and colour
+  inCategory: number;   // of those, how many are in the sign's own category
+  exception: boolean;   // the sign is a rare one for its shape and colour
+}
+
+/** How reliably "this shape and colour" points to the sign's category, counted over the signs in the app. */
+export function lookFact(all: readonly TrafficSign[], sign: TrafficSign): LookFact {
+  const same = all.filter(s => s.shape === sign.shape && s.color === sign.color);
+  const inCategory = same.filter(s => s.category === sign.category).length;
+  return { total: same.length, inCategory, exception: same.length > 1 && inCategory / same.length < 0.2 };
+}

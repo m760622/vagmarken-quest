@@ -27,6 +27,7 @@ import {
   type SessionPlan,
 } from '@/lib/collection';
 import { signDescription, signName, signNameSecondary } from '@/lib/signName';
+import SpeakButton from './SpeakButton';
 
 const CORAL = 'hsl(12 90% 64%)';
 const ALL_IDS = TRAFFIC_SIGNS.map(s => s.id);
@@ -335,11 +336,16 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
                       const sub = signNameSecondary(sg, lang);
                       return (
                         <li key={sg.id} className="flex items-center gap-3 rounded-2xl border border-[hsl(var(--option-border))] bg-[hsl(var(--background))]/40 p-3 text-start">
-                          <div className="shrink-0 w-[76px] flex justify-center"><SignDisplay sign={sg} size="sm" /></div>
+                          {/* the speaker sits under the sign, so the text keeps its width on narrow phones */}
+                          <div className="shrink-0 w-[76px] flex flex-col items-center gap-2">
+                            <SignDisplay sign={sg} size="sm" />
+                            {lang !== 'en' && <SpeakButton text={sg.name} lang={lang} />}
+                          </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-base font-display font-extrabold text-[hsl(var(--foreground))] leading-snug">{signName(sg, lang)}</p>
-                            {sub && <bdi dir="ltr" className="block text-xs font-semibold opacity-75 mt-0.5">{sub}</bdi>}
-                            <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))] mt-1.5">{signDescription(sg, lang)}</p>
+                            {/* Long Swedish compounds ("Hastighetsbegränsning") may break rather than stick out on a 320px screen */}
+                            <p className="text-[15px] min-[360px]:text-base font-display font-extrabold text-[hsl(var(--foreground))] leading-snug [overflow-wrap:anywhere]">{signName(sg, lang)}</p>
+                            {sub && <bdi dir="ltr" className="block text-xs font-semibold opacity-75 mt-0.5 [overflow-wrap:anywhere]">{sub}</bdi>}
+                            <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))] mt-1.5 [overflow-wrap:anywhere]">{signDescription(sg, lang)}</p>
                           </div>
                         </li>
                       );
@@ -397,10 +403,13 @@ export default function CollectionGame({ lang, category, onHome, muted = false, 
 
               {step === 'feedback' && last && (
                 <div ref={feedbackRef} className="w-full mt-3 rounded-2xl border border-[hsl(var(--option-border))] bg-[hsl(var(--option-bg))] px-4 py-3" aria-live="polite">
-                  <p className={cn('text-sm font-display font-extrabold mb-1', wasRight ? 'text-emerald-300' : 'text-rose-300')}>
-                    {wasRight ? L('Correct!', 'Rätt!', 'صحيح!') : L('Not quite', 'Inte riktigt', 'ليست صحيحة')}
-                    {!wasRight && <span className="font-semibold text-[hsl(var(--foreground))]"> · {signName(card, lang)}</span>}
-                  </p>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className={cn('text-sm font-display font-extrabold', wasRight ? 'text-emerald-300' : 'text-rose-300')}>
+                      {wasRight ? L('Correct!', 'Rätt!', 'صحيح!') : L('Not quite', 'Inte riktigt', 'ليست صحيحة')}
+                      {!wasRight && <span className="font-semibold text-[hsl(var(--foreground))]"> · {signName(card, lang)}</span>}
+                    </p>
+                    {lang !== 'en' && <SpeakButton text={card.name} lang={lang} className="-mt-1" />}
+                  </div>
                   <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">{signDescription(card, lang)}</p>
                   <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-display font-bold px-2.5 py-1 rounded-full bg-[hsl(var(--background))]/60 border border-[hsl(var(--option-border))]">
                     {last.isNew

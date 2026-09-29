@@ -14,6 +14,8 @@ import DailyChallenge from './DailyChallenge';
 import ExamGame from './ExamGame';
 import RevealGame from './RevealGame';
 import OddOneOutGame from './OddOneOutGame';
+import TwinsGame from './TwinsGame';
+import ClassifyGame from './ClassifyGame';
 import CollectionGame from './CollectionGame';
 import ScoreBar from './ScoreBar';
 import SignDisplay from './SignDisplay';
@@ -72,7 +74,7 @@ function TimerArc({ timeLeft, total }: { timeLeft: number; total: number }) {
   );
 }
 
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection' | 'twins' | 'classify';
 
 export default function QuizGame() {
   const { muted, toggleMute } = useMute();
@@ -109,6 +111,12 @@ export default function QuizGame() {
   }
   if (mode === 'reveal') {
     return <RevealGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+  }
+  if (mode === 'classify') {
+    return <ClassifyGame lang={lang} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
+  }
+  if (mode === 'twins') {
+    return <TwinsGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;
   }
   if (mode === 'odd') {
     return <OddOneOutGame lang={lang} category={activeCategory} onHome={() => setMode('quiz')} muted={muted} onToggleMute={toggleMute} />;

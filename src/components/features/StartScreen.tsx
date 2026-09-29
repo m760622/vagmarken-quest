@@ -8,7 +8,7 @@ import { CATEGORY_HUE } from '@/constants/categories';
 import SignDisplay from './SignDisplay';
 import {
   Play, Puzzle, Layers, Lock, Zap, Brain, Calendar, Search, X, Menu, Flame, ListChecks,
-  ShieldCheck, ChevronUp, ChevronDown, ChevronRight, Check, History, ClipboardCheck, Gamepad2, ScanEye, Shapes, Album, type LucideIcon,
+  ShieldCheck, ChevronUp, ChevronDown, ChevronRight, Check, History, ClipboardCheck, Gamepad2, ScanEye, Shapes, Album, Columns2, Tags, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -16,10 +16,12 @@ import { UNLOCK_THRESHOLD } from '@/hooks/useProgression';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import { useMistakes, useProgress } from '@/hooks/useProgress';
 import { usePlayer } from '@/hooks/usePlayer';
+import { useCollection } from '@/hooks/useCollection';
+import { dueWithin } from '@/lib/collection';
 import { displayStreak, streakAtRisk } from '@/lib/player';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam' | 'reveal' | 'odd' | 'collection';
+type GameMode = 'quiz' | 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'review' | 'exam' | 'reveal' | 'odd' | 'collection' | 'twins' | 'classify';
 
 interface ProgressionInfo {
   hardUnlocked: boolean;
@@ -28,7 +30,7 @@ interface ProgressionInfo {
 
 interface StartScreenProps {
   onStart: (category: SignCategory | 'all', difficulty: Difficulty, signPool?: TrafficSign[], options?: { review?: boolean }) => void;
-  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection', category: SignCategory | 'all') => void;
+  onStartMode: (mode: 'match' | 'learn' | 'blitz' | 'memory' | 'daily' | 'exam' | 'reveal' | 'odd' | 'collection' | 'twins' | 'classify', category: SignCategory | 'all') => void;
   scores: HighScore[];
   onClearScores: () => void;
   lang: Language;
@@ -49,11 +51,13 @@ const MODES: { id: GameMode; icon: LucideIcon; labelKey: string; descKey: string
   { id: 'match',  icon: Puzzle,   labelKey: 'modeMatch',  descKey: 'modeMatchDesc',  hue: '330 88% 66%' },
   { id: 'reveal', icon: ScanEye,  labelKey: 'modeReveal', descKey: 'modeRevealDesc', hue: '228 86% 68%' },
   { id: 'odd',    icon: Shapes,   labelKey: 'modeOdd',    descKey: 'modeOddDesc',    hue: '132 68% 50%' },
+  { id: 'twins',  icon: Columns2, labelKey: 'modeTwins',  descKey: 'modeTwinsDesc',  hue: '186 90% 50%' },
+  { id: 'classify', icon: Tags,   labelKey: 'modeClassify', descKey: 'modeClassifyDesc', hue: '24 94% 58%' },
   { id: 'collection', icon: Album, labelKey: 'modeCollection', descKey: 'modeCollectionDesc', hue: '12 90% 64%' },
 ];
 
 /* The games share one expandable card, so the mode list stays short */
-const GAME_IDS: GameMode[] = ['daily', 'blitz', 'memory', 'match', 'reveal', 'odd', 'collection'];
+const GAME_IDS: GameMode[] = ['daily', 'blitz', 'memory', 'match', 'reveal', 'odd', 'twins', 'classify', 'collection'];
 const GAMES_HUE = '292 84% 66%';
 /* Space kept free above the sticky start bar when scrolling revealed cards into view */
 const START_BAR_CLEARANCE = 128;
@@ -67,6 +71,7 @@ const DIFFICULTY_HUE: Record<Difficulty, string> = {
 
 /* Real signs floating in the hero. Missing ids are skipped safely. */
 const findSign = (id: string) => TRAFFIC_SIGNS.find(s => s.id === id);
+const ALL_SIGN_IDS = TRAFFIC_SIGNS.map(s => s.id);
 const HERO_LEFT = findSign('A15');
 const HERO_CENTER = findSign('B2');
 const HERO_RIGHT = findSign('C31');
@@ -157,7 +162,9 @@ interface ModeCardProps {
   /** aria-pressed for cards that select a mode; leave undefined for cards that open a screen or expand */
   pressed?: boolean;
   expanded?: boolean;
-  badge?: number;
+  badge?: number | string;
+  /** 'alert' (default) is the rose count of mistakes; 'calm' is a quiet neutral note */
+  badgeTone?: 'alert' | 'calm';
   fillIcon?: boolean;
   /** Replaces the selected check in the corner (open / expand arrows) */
   corner?: ReactNode;
@@ -167,7 +174,7 @@ interface ModeCardProps {
 }
 
 function ModeCard({
-  icon: Icon, hue, title, desc, wide, compact, active, pressed, expanded, badge, fillIcon, corner, onClick, style, className,
+  icon: Icon, hue, title, desc, wide, compact, active, pressed, expanded, badge, badgeTone = 'alert', fillIcon, corner, onClick, style, className,
 }: ModeCardProps) {
   return (
     <button
@@ -207,7 +214,7 @@ function ModeCard({
         <span className={cn('flex items-center gap-1.5 font-display font-bold text-[hsl(var(--foreground))] leading-tight', compact ? 'justify-center text-[12px] min-[400px]:text-[13px] [overflow-wrap:anywhere]' : wide ? 'text-lg' : 'text-[15px]')}>
           {title}
           {!compact && badge !== undefined && (
-            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-rose-500/25 text-rose-300 font-extrabold tabular-nums">{badge}</span>
+            <span className={cn('text-[11px] px-1.5 py-0.5 rounded-full font-extrabold tabular-nums', badgeTone === 'calm' ? 'bg-[hsl(var(--foreground))]/10 text-[hsl(var(--foreground))]' : 'bg-rose-500/25 text-rose-300')}>{badge}</span>
           )}
         </span>
         <span className={cn('block text-xs text-[hsl(var(--muted-foreground))] mt-1 leading-snug', compact && 'sr-only')}>
@@ -261,6 +268,15 @@ export default function StartScreen({
   // After the first finished game the hero shrinks so the modes are reachable right away
   const compact = player.gamesPlayed > 0;
   const { ids: mistakeIds, count: mistakeCount } = useMistakes();
+  // Reviews that are due in My collection: a quiet reminder to come back. Re-checked every minute.
+  const collection = useCollection();
+  const [, setMinute] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setMinute(n => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const dueCount = dueWithin(collection, ALL_SIGN_IDS, Date.now());
+  const dueBadge = dueCount > 0 ? t(lang, 'dueBadge', { n: dueCount }) : undefined;
 
   const isRtl = lang === 'ar';
   const hardLocked = !progression.hardUnlocked;
@@ -340,6 +356,8 @@ export default function StartScreen({
     selectedMode === 'match'  ? t(lang, 'modeMatch') :
     selectedMode === 'reveal' ? t(lang, 'modeReveal') :
     selectedMode === 'odd'    ? t(lang, 'modeOdd') :
+    selectedMode === 'twins' ? t(lang, 'modeTwins') :
+    selectedMode === 'classify' ? t(lang, 'modeClassify') :
     selectedMode === 'collection' ? t(lang, 'modeCollection') :
                                 t(lang, 'learnMode');
 
@@ -482,6 +500,8 @@ export default function StartScreen({
                 icon={Gamepad2}
                 hue={GAMES_HUE}
                 title={t(lang, 'modeGames')}
+                badge={dueBadge}
+                badgeTone="calm"
                 desc={selectedGame ? t(lang, selectedGame.labelKey) : GAME_IDS.map(id => t(lang, modeOf(id).labelKey)).join(' · ')}
                 active={!!selectedGame}
                 expanded={gamesOpen}
@@ -505,6 +525,8 @@ export default function StartScreen({
                     icon={m.icon}
                     hue={m.hue}
                     title={t(lang, m.labelKey)}
+                    badge={id === 'collection' ? dueBadge : undefined}
+                    badgeTone="calm"
                     desc={t(lang, m.descKey)}
                     active={selectedMode === id}
                     pressed={opensDirectly ? undefined : selectedMode === id}
