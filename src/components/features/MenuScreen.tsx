@@ -7,6 +7,7 @@ import type { Theme } from '@/hooks/useTheme';
 import PlayerCard from './PlayerCard';
 import HighScorePanel from './HighScorePanel';
 import BadgesPanel from './BadgesPanel';
+import { versionLabel } from '@/lib/version';
 
 interface MenuScreenProps {
   open: boolean;
@@ -101,6 +102,10 @@ export default function MenuScreen({
               onClick={onToggleTheme}
             />
           </section>
+
+          <p className="text-center text-xs text-[hsl(var(--muted-foreground))]">
+            {t(lang, 'menuVersion')} <bdi dir="ltr" className="font-semibold tabular-nums">{versionLabel()}</bdi>
+          </p>
         </div>
       </SheetContent>
     </Sheet>
