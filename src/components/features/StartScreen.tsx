@@ -389,7 +389,7 @@ export default function StartScreen({
           )}
 
           {isRtl ? (
-            <h1 className={cn('rise-in font-display font-extrabold leading-tight text-brand-gradient', compact ? 'text-3xl sm:text-4xl' : 'text-5xl sm:text-6xl')} style={{ '--rise-delay': '0.12s' } as CSSProperties}>
+            <h1 className={cn('rise-in font-display font-extrabold leading-tight text-brand-gradient pb-3 -mb-3', compact ? 'text-3xl sm:text-4xl' : 'text-5xl sm:text-6xl')} style={{ '--rise-delay': '0.12s' } as CSSProperties}>
               {t(lang, 'appTitle')}
             </h1>
           ) : (
