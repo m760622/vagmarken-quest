@@ -19,6 +19,7 @@ import { buildClassifyRounds, CLASSIFY_ORDER, lookFact, type ClassifyRound } fro
 import { EXCEPTION_NOTE, lookSentence } from '@/lib/classifyText';
 import { signDescription, signName } from '@/lib/signName';
 import { l3 } from '@/lib/l3';
+import SpeakButton from './SpeakButton';
 import { PointsPill, RoundHeader, RoundIntro, RoundResult } from './RoundGameParts';
 
 const TOTAL_ROUNDS = 10;
@@ -165,9 +166,12 @@ export default function ClassifyGame({ lang, onHome, muted = false, onToggleMute
                 : L('Not quite', 'Inte riktigt', 'ليست صحيحة')}
             </p>
             <div className="flex flex-col gap-2 text-xs">
-              <div>
-                <p className="font-bold text-[hsl(var(--foreground))]">{signName(sign, lang)}</p>
-                <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">{signDescription(sign, lang)}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-[hsl(var(--foreground))]">{signName(sign, lang)}</p>
+                  <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">{signDescription(sign, lang)}</p>
+                </div>
+                {lang !== 'en' && <SpeakButton text={sign.name} lang={lang} />}
               </div>
               <p className="text-[hsl(var(--muted-foreground))]">
                 {L('Category: ', 'Kategori: ', 'الفئة: ')}

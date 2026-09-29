@@ -5,6 +5,7 @@ import { t, CATEGORY_LABELS_I18N } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, RotateCcw, Home, Layers } from 'lucide-react';
+import SpeakButton from './SpeakButton';
 
 interface LearnModeProps {
   lang: Language;
@@ -170,6 +171,7 @@ export default function LearnMode({ lang, category, onHome }: LearnModeProps) {
               <p dir="ltr" className="text-xs text-[hsl(var(--muted-foreground))]/70 mt-3 italic">
                 {lang === 'sv' ? sign.nameEn : sign.name}
               </p>
+              {flipped && <SpeakButton text={sign.name} lang={lang} className="mt-3" />}
             </div>
           </div>
         </div>

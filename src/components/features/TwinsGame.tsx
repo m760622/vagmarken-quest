@@ -16,6 +16,7 @@ import { useRoundScroll } from '@/hooks/useRoundScroll';
 import { buildTwinRounds, type TwinRound } from '@/lib/gameLogic';
 import { signDescription, signName, signNameSecondary } from '@/lib/signName';
 import { l3 } from '@/lib/l3';
+import SpeakButton from './SpeakButton';
 import { PointsPill, RoundHeader, RoundIntro, RoundResult } from './RoundGameParts';
 
 const TOTAL_ROUNDS = 10;
@@ -173,9 +174,12 @@ export default function TwinsGame({ lang, category, onHome, muted = false, onTog
                 : L('Not quite', 'Inte riktigt', 'ليست صحيحة')}
             </p>
             <div className="flex flex-col gap-2 text-xs">
-              <div>
-                <p className="font-bold text-emerald-300">{signName(target, lang)}</p>
-                <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">{signDescription(target, lang)}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-emerald-300">{signName(target, lang)}</p>
+                  <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">{signDescription(target, lang)}</p>
+                </div>
+                {lang !== 'en' && <SpeakButton text={target.name} lang={lang} />}
               </div>
               {wrongPick && (
                 <div>
