@@ -21,7 +21,7 @@ import { SignCategory } from '@/types/game';
 import { TRAFFIC_SIGNS } from '@/constants/signs';
 import { getMistakes } from '@/lib/mistakes';
 import { cn } from '@/lib/utils';
-import { nameWithAr } from '@/lib/signNames';
+import AnswerName from './AnswerName';
 
 const ARC_SIZE      = 64;
 const RADIUS        = 27;
@@ -246,9 +246,7 @@ export default function QuizGame() {
             )}>
               {isCorrect
                 ? t(lang, 'correctAnswer')
-                : timedOut
-                ? `${t(lang, 'timeUp')} ${t(lang, 'wrongAnswer')} ${nameWithAr(currentQuestion.sign, lang)}`
-                : `${t(lang, 'wrongAnswer')} ${nameWithAr(currentQuestion.sign, lang)}`}
+                : <>{timedOut && `${t(lang, 'timeUp')} `}{t(lang, 'wrongAnswer')} <AnswerName sign={currentQuestion.sign} lang={lang} /></>}
             </div>
           )}
 

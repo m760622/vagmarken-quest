@@ -11,7 +11,7 @@ import { t } from '@/constants/i18n';
 import SignDisplay from './SignDisplay';
 import { Home, Calendar, Share2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { nameWithAr } from '@/lib/signNames';
+import AnswerName from './AnswerName';
 import Confetti from './Confetti';
 import XpChip from './XpChip';
 import { useFinishGame } from '@/hooks/usePlayer';
@@ -302,7 +302,7 @@ export default function DailyChallenge({ lang, onHome }: DailyChallengeProps) {
           )}>
             {selected === q.sign.id
               ? t(lang, 'correctAnswer')
-              : `${t(lang, 'wrongAnswer')} ${nameWithAr(q.sign, lang)}`}
+              : <>{t(lang, 'wrongAnswer')} <AnswerName sign={q.sign} lang={lang} /></>}
           </div>
         )}
 
