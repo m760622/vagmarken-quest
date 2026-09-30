@@ -20,11 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the version check needs the commit that was on main before this push
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      # A failing test or a version that was not raised stops the deploy: the site keeps its current version
+      - name: Unit tests
+        run: npm test
+      - name: Version was raised
+        # Pushes only: a manual run redeploys what is already on main
+        if: github.event_name == 'push'
+        env:
+          BASE_SHA: ${{ github.event.before }}
+        run: node scripts/check-version.mjs --base "$BASE_SHA"
       - run: npm run build
         env:
           VITE_BASE: /vagmarken-quest/

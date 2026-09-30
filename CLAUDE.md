@@ -14,4 +14,5 @@
 - Raise it in every change that goes into a pull request: patch (x.y.Z) for fixes, tooling and refactors; minor (x.Y.0) for new or changed features and screens; major for a redesign or a change that breaks saved data.
 - Use `npm version <patch|minor|major> --no-git-tag-version` so `package-lock.json` stays in sync. One bump per pull request is enough; follow-up commits on the same open PR don't need another.
 - Run `npm run version:check` before pushing. It fails when the version is not higher than on `origin/main`.
+- The deploy workflow runs `npm test` and the same check, against the commit that was on `main` before the push. A push to `main` that fails either is not deployed (the site keeps its current version). A manual run of the workflow skips the version check.
 - Say the new version in the pull request description.
