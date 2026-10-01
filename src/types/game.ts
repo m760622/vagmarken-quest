@@ -12,6 +12,12 @@ export interface TrafficSign {
   color: 'red' | 'blue' | 'white' | 'yellow' | 'green';
   symbol: string;
   imageUrl?: string;  // Official PNG from Transportstyrelsen GlobalAssets
+  /**
+   * true = the texts are entered but the official image is still missing. Such a sign has no
+   * imageUrl and no PNG, and is left out of every screen, game and count (see src/lib/signList.ts)
+   * until the image is added and this flag is removed.
+   */
+  placeholder?: boolean;
   description: string;
   descriptionAr: string;
   descriptionEn?: string;
