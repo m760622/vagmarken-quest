@@ -1,0 +1,186 @@
+قائمة المرشّحين المختصرة للإشارات (بدل القاعدة الكاملة ذات الـ314 عنصرًا).
+المصدر: قاعدة JSON لصقها لي المستخدم (أصلها مجهول، وادّعاؤها «تحقق منها» غير مؤكد). هنا الأقسام الستة A وB وC وD وE وT فقط: 179 صفًا.
+الصيغة: القسم|الرمز|الاسم السويدي كما في القاعدة|وجود صورة بحسب القاعدة (v = تقول القاعدة إن لها ملف SVG على Wikimedia Commons وتحققتُ بتاريخ 2026-10-02 أن الملف موجود بالاسم المطابق في الكل: 147 من 147، n = لا صورة بحسب القاعدة وتحققتُ أنها 404 في الكل: 32 من 32).
+نمط رابط الصورة بحسب القاعدة: https://commons.wikimedia.org/wiki/Special:FilePath/Sweden_road_sign_{الرمز}.svg
+تنبيه: الأسماء ناقصة الثقة. وُجدت أخطاء في C8 وD8 وC35 وC39 (انظر تعليمات التسليم). لا تعتمد اسمًا دون مطابقته بصورته الفعلية.
+الأسماء الإنجليزية والعربية والأوصاف غير مضمّنة هنا: اكتبها أنت وعلّمها «يحتاج مراجعة متحدث أصلي».
+----------------------------------------------------------------------------------------
+A|A1-1|Varning för sväng (vänster)|v
+A|A1-2|Varning för sväng (höger)|v
+A|A2-1|Varning för dubbelsväng (höger först)|v
+A|A2-2|Varning för dubbelsväng (vänster först)|v
+A|A3|Varning för brant nedförsbacke|v
+A|A4|Varning för brant uppförsbacke|v
+A|A5-1|Varning för avsmalnande väg|v
+A|A5-2|Varning för avsmalnande väg (höger)|v
+A|A5-3|Varning för avsmalnande väg (vänster)|v
+A|A6|Varning för rörlig bro|v
+A|A7|Varning för kaj, strand eller färjeläge|v
+A|A8|Varning för ojämn väg|v
+A|A9-1|Varning för farthinder|v
+A|A9-2|Varning för farthinder (gupp)|v
+A|A10|Varning för slirig körbana|v
+A|A11|Varning för stenskott|v
+A|A12-1|Varning för stenras|v
+A|A12-2|Varning för stenras (vänster)|v
+A|A13|Varning för övergångsställe|v
+A|A14|Varning för gående|v
+A|A15|Varning för barn|v
+A|A16|Varning för cyklister och mopedister|v
+A|A17|Varning för korsande skidspår|v
+A|A18|Varning för korsande ridväg|v
+A|A19-1|Varning för älg|v
+A|A19-2|Varning för hjortdjur|v
+A|A19-3|Varning för färd med djur|v
+A|A19-4|Varning för fritt strövande hästar|v
+A|A19-5|Varning för fritt strövande renar|v
+A|A19-6|Varning för fritt strövande får|v
+A|A19-7|Varning för vildsvin|v
+A|A20|Varning för vägarbete|v
+A|A21|Vägarbete upphör|v
+A|A22|Varning för trafiksignal|v
+A|A23-1|Varning för lågt flygande flygplan|v
+A|A24-1|Varning för farlig sidvind|v
+A|A24-2|Varning för farlig sidvind (vänster)|v
+A|A25|Varning för mötande trafik|v
+A|A26|Varning för tunnel|v
+A|A27|Varning för svag vägkant|v
+A|A28|Varning för vägkorsning|v
+A|A30|Varning för cirkulationsplats|v
+A|A31|Varning för långsamtgående fordon|v
+A|A34|Varning för kö|v
+A|A35|Varning för järnvägsövergång med bommar|v
+A|A36|Varning för järnvägsövergång utan bommar|v
+A|A37|Varning för spårvagn|v
+A|A40|Varning för annan fara|v
+A|A41|Varning för olycka|v
+B|B1|Väjningsplikt|v
+B|B2|Stopplikt|v
+B|B3-1|Övergångsställe|v
+B|B4|Huvudled|v
+B|B5|Huvudled upphör|v
+B|B6|Väjningsplikt mot mötande trafik|v
+B|B7|Företräde framför mötande trafik|v
+B|B8|Cykelöverfart|v
+C|C1|Förbud mot infart med fordon|v
+C|C2|Förbud mot trafik med fordon|v
+C|C3|Förbud mot trafik med motorcykel|v
+C|C4|Förbud mot trafik med motordrivet fordon|v
+C|C5|Förbud mot trafik med motorcykel och moped klass I|v
+C|C6|Förbud mot trafik med fordon med tillkopplad släpvagn|v
+C|C7|Förbud mot trafik med lastbil|v
+C|C8|Förbud mot fordon som inte kan framföras snabbare än 25 km/h|v
+C|C9|Förbud mot transport av farligt gods|v
+C|C10|Förbud mot cykling|v
+C|C11|Förbud mot moped|v
+C|C12|Förbud mot hästfordon|v
+C|C13|Förbud mot terrängmotorfordon|v
+C|C14|Förbud mot ridning|v
+C|C15|Förbud mot gångtrafik|v
+C|C16|Förbud mot fordon med bredd över angivet mått|v
+C|C17|Förbud mot fordon med höjd över angivet mått|v
+C|C18|Förbud mot fordon med längd över angivet mått|v
+C|C19|Krav på visst minsta avstånd mellan fordon|v
+C|C20|Förbud mot fordon med vikt över angivet mått|v
+C|C21|Förbud mot fordonståg med vikt över angivet mått|v
+C|C22-1|Förbud mot fordonståg över bärighetsklass 3|v
+C|C23|Förbud mot fordon med axeltryck över angivet mått|v
+C|C24|Förbud mot fordon med boggitryck över angivet mått|v
+C|C25-1|Förbud mot att svänga till vänster|v
+C|C25-2|Förbud mot att svänga till höger|v
+C|C26|Förbud mot att vända|v
+C|C27|Förbud mot omkörning|v
+C|C28|Förbud mot omkörning upphör|v
+C|C29|Förbud mot omkörning för lastbil|v
+C|C30|Förbud mot omkörning för lastbil upphör|v
+C|C31-3|Hastighetsbegränsning|v
+C|C32-3|Hastighetsbegränsning upphör|v
+C|C33|Stopp vid tull|n
+C|C34|Stopp för angivet ändamål|n
+C|C35|Förbud mot att stanna och parkera|v
+C|C36|Förbud mot att parkera fordon på dag med udda datum|v
+C|C37|Förbud mot att parkera fordon på dag med jämnt datum|v
+C|C38|Datumparkering|v
+C|C39|Förbud mot att stanna|v
+C|C40|Ändamålsplats|n
+C|C41|Slut på ändamålsplats|n
+C|C42|Vändplats|n
+C|C43|Slut på vändplats|n
+C|C44|Förbud mot dubbdäck|v
+C|C45|Särskilda bestämmelser för stannande och parkering|n
+C|C46|Begränsat trippelaxeltryck|n
+D|D1-1|Påbjuden körriktning (vänster)|v
+D|D1-2|Påbjuden körriktning (höger)|v
+D|D1-3|Påbjuden körriktning (rakt fram)|v
+D|D1-6|Påbjuden körriktning (rakt fram och vänster)|v
+D|D1-7|Påbjuden körriktning (rakt fram och höger)|v
+D|D1-8|Påbjuden körriktning (höger och vänster)|v
+D|D2-1|Påbjuden passage på höger sida|v
+D|D2-2|Påbjuden passage på vänster sida|v
+D|D2-3|Påbjuden passage på båda sidor|v
+D|D3|Påbjuden cirkulationsplats|v
+D|D4|Påbjuden cykelbana|v
+D|D5|Påbjuden gångbana|v
+D|D6|Påbjuden gång- och cykelbana|v
+D|D7|Påbjuden ridbana|n
+D|D8|Påbjuden lägsta hastighet|v
+D|D9|Påbjuden lägsta hastighet upphör|v
+E|E1|Motorväg|v
+E|E2|Motorväg upphör|v
+E|E3|Motortrafikled|v
+E|E4|Motortrafikled upphör|v
+E|E5|Tättbebyggt område|v
+E|E6|Tättbebyggt område upphör|v
+E|E7|Gågata|v
+E|E8|Gågata upphör|v
+E|E9|Gångfartsområde|v
+E|E10|Gångfartsområde upphör|v
+E|E11|Rekommenderad lägre hastighet|n
+E|E12|Rekommenderad lägre hastighet upphör|n
+E|E13|Rekommenderad högsta hastighet|n
+E|E14|Rekommenderad högsta hastighet upphör|v
+E|E15|Sammanvävning|v
+E|E16|Enkelriktad trafik|n
+E|E17|Återvändsväg|n
+E|E18|Mötesplats|v
+E|E19|Parkering|v
+E|E20|Områdesmärke|n
+E|E21|Slut på område|n
+E|E22|Busshållplats|v
+E|E23|Taxi|v
+E|E24|Automatisk trafikövervakning|v
+E|E25|Betalväg|v
+E|E26|Tunnel|v
+E|E27|Nöduppställningsplats|v
+E|E28|Nödutgång|n
+E|E29|Utrymningsväg|n
+E|E30|Särskilda bestämmelser för parkering|n
+E|E31|Miljözon|n
+E|E32|Slut på miljözon|n
+E|E33|Cykelgata|n
+E|E34|Cykelgata upphör|n
+T|T1|Vägsträckas längd|n
+T|T2|Avstånd|v
+T|T3|Avstånd till stopplikt|v
+T|T4|Fri bredd|v
+T|T5|Totalvikt|v
+T|T6|Tidsangivelse|v
+T|T7|Rörelsehindrade|n
+T|T8|Symboltavla|n
+T|T9|Nedsatt syn|v
+T|T10|Nedsatt hörsel|v
+T|T11|Utsträckning|n
+T|T12|Riktning|n
+T|T13|Flervägsväjning|v
+T|T14|Flervägsstopp|v
+T|T15|Vägars fortsättning i korsning|n
+T|T16|Avgift|v
+T|T17|Parkeringsskiva|v
+T|T18|Tillåten tid för parkering|v
+T|T19|Boende|v
+T|T20|Parkeringsbiljett|v
+T|T21|Uppställning av fordon|n
+T|T22|Text|n
+T|T23|Tunnelkategori|n
+T|T24|Laddplats|v
+T|T25|Öppet dygnet runt|v
