@@ -827,8 +827,8 @@ export const ALL_SIGNS: TrafficSign[] = [
   {
     id: 'C8', code: 'C8',
     name: 'Förbud mot trafik med traktor och motorredskap klass II',
-    nameEn: 'No tractors or motor implements',
-    nameAr: 'ممنوع الجرارات والآليات ذاتية الحركة',
+    nameEn: 'No tractors or class II motor implements',
+    nameAr: 'ممنوع الجرارات والآليات ذاتية الحركة (الفئة 2)',
     category: 'prohibition', shape: 'circle', color: 'red',
     symbol: '🚜',
     imageUrl: signImage('C8'),
@@ -851,8 +851,8 @@ export const ALL_SIGNS: TrafficSign[] = [
   {
     id: 'C12', code: 'C12',
     name: 'Förbud mot trafik med fordon förspänt med dragdjur',
-    nameEn: 'No horse-drawn vehicles',
-    nameAr: 'ممنوع العربات التي تجرّها الخيول',
+    nameEn: 'No animal-drawn vehicles',
+    nameAr: 'ممنوع العربات التي تجرّها الحيوانات',
     category: 'prohibition', shape: 'circle', color: 'red',
     symbol: '🐴',
     imageUrl: signImage('C12'),
