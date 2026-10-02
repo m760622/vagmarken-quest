@@ -558,7 +558,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'D6', code: 'D6',
-    name: 'Påbjuden gång- och cykelbana (gemensam)',
+    name: 'Påbjuden gång- och cykelbana',
     nameEn: 'Shared mandatory path',
     nameAr: 'مسار مشترك للمشاة والدراجات',
     category: 'mandatory', shape: 'circle', color: 'blue',
@@ -802,7 +802,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C5', code: 'C5',
-    name: 'Förbud mot trafik med motorcykel och moped klass 1',
+    name: 'Förbud mot trafik med motorcykel och moped klass I',
     nameEn: 'No motorcycles or class I mopeds',
     nameAr: 'ممنوع الدراجات النارية والموبيد (الفئة 1)',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -958,25 +958,25 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'E9', code: 'E9',
-    name: 'Gårdsgata',
+    name: 'Gångfartsområde',
     nameEn: 'Living street',
     nameAr: 'شارع سكني مشترك',
     category: 'information', shape: 'square', color: 'blue',
     symbol: '🏘️',
     imageUrl: signImage('E9'),
-    description: 'Anger början på en gårdsgata. Fordon ska köras i gångfart.',
+    description: 'Anger början på ett gångfartsområde. Fordon ska köras i gångfart.',
     descriptionEn: 'Marks the start of a living street. Vehicles must drive at walking pace.',
     descriptionAr: 'يبيّن بداية شارع سكني مشترك. يجب أن تسير المركبات بسرعة المشي.',
   },
   {
     id: 'E10', code: 'E10',
-    name: 'Gårdsgata upphör',
+    name: 'Gångfartsområde upphör',
     nameEn: 'End of living street',
     nameAr: 'نهاية الشارع السكني المشترك',
     category: 'information', shape: 'square', color: 'blue',
     symbol: '🏘️',
     imageUrl: signImage('E10'),
-    description: 'Anger var gårdsgatan upphör.',
+    description: 'Anger var gångfartsområdet upphör.',
     descriptionEn: 'Shows where the living street ends.',
     descriptionAr: 'يبيّن نهاية الشارع السكني المشترك.',
   },
@@ -994,7 +994,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'E23', code: 'E23',
-    name: 'Taxistation',
+    name: 'Taxi',
     nameEn: 'Taxi rank',
     nameAr: 'موقف سيارات الأجرة',
     category: 'information', shape: 'square', color: 'blue',
@@ -1138,7 +1138,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'D10', code: 'D10',
-    name: 'Början på körfält för fordon i linjetrafik',
+    name: 'Påbjudet körfält eller körbana för fordon i linjetrafik med flera',
     nameEn: 'Start of lane for scheduled services',
     nameAr: 'بداية مسار مخصص للنقل العام',
     category: 'mandatory', shape: 'circle', color: 'blue',
@@ -1151,7 +1151,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   // ── T. TILLÄGGSTAVLOR (Additional plates) — verified names, public-domain images ──
   {
     id: 'T3', code: 'T3',
-    name: 'Avstånd till stoppskyldighet',
+    name: 'Avstånd till stopplikt',
     nameEn: 'Distance to stop obligation',
     nameAr: 'المسافة إلى نقطة التوقف الإلزامي',
     category: 'additional', shape: 'square', color: 'white',
@@ -1187,7 +1187,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'T6', code: 'T6',
-    name: 'Klockslag för förbuds giltighet',
+    name: 'Tidsangivelse',
     nameEn: 'Times when the prohibition applies',
     nameAr: 'أوقات سريان المنع',
     category: 'additional', shape: 'square', color: 'white',
