@@ -92,16 +92,25 @@ describe('buildClassifyRounds', () => {
 });
 
 describe('lookFact', () => {
+  // The expected counts are counted here from the data with a plain filter, so they hold as signs are added.
+  const lookCounts = (sign: (typeof all)[number]) => {
+    const sameLook = all.filter(s => s.shape === sign.shape && s.color === sign.color);
+    return { total: sameLook.length, inCategory: sameLook.filter(s => s.category === sign.category).length };
+  };
+
   it('counts how many signs with the same shape and colour share the category', () => {
     const warning = all.find(s => s.category === 'warning')!;
-    expect(lookFact(all, warning)).toEqual({ total: 35, inCategory: 34, exception: false });
+    expect(lookFact(all, warning)).toEqual({ ...lookCounts(warning), exception: false });
     const prohibition = all.find(s => s.category === 'prohibition')!;
-    expect(lookFact(all, prohibition)).toEqual({ total: 27, inCategory: 27, exception: false });
+    expect(lookFact(all, prohibition)).toEqual({ ...lookCounts(prohibition), exception: false });
   });
 
-  it('flags the rare exceptions: the give-way triangle is one of 35 red triangles', () => {
+  it('flags the rare exceptions: the give-way triangle is one of the many red triangles', () => {
     const giveWay = all.find(s => s.category === 'priority' && s.shape === 'triangle')!;
-    expect(lookFact(all, giveWay)).toEqual({ total: 35, inCategory: 1, exception: true });
+    const { total, inCategory } = lookCounts(giveWay);
+    expect(inCategory).toBeGreaterThanOrEqual(1);
+    expect(total).toBeGreaterThan(5 * inCategory);   // rare enough to be called an exception (under 20%)
+    expect(lookFact(all, giveWay)).toEqual({ total, inCategory, exception: true });
   });
 
   it('a one-of-a-kind sign is not called an exception', () => {
