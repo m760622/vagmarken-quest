@@ -778,7 +778,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'A37', code: 'A37',
-    name: 'Korsning med spårväg',
+    name: 'Varning för korsning med spårväg utan bommar',
     nameEn: 'Tram crossing ahead',
     nameAr: 'تقاطع مع خط ترام',
     category: 'warning', shape: 'triangle', color: 'red',
@@ -826,7 +826,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C8', code: 'C8',
-    name: 'Förbud mot trafik med traktor och motorredskap',
+    name: 'Förbud mot trafik med traktor och motorredskap klass II',
     nameEn: 'No tractors or motor implements',
     nameAr: 'ممنوع الجرارات والآليات ذاتية الحركة',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -838,7 +838,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C9', code: 'C9',
-    name: 'Förbud mot fordon lastade med farligt gods',
+    name: 'Förbud mot trafik med fordon lastat med farligt gods',
     nameEn: 'No vehicles carrying dangerous goods',
     nameAr: 'ممنوع المركبات المحمّلة بمواد خطرة',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -850,7 +850,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C12', code: 'C12',
-    name: 'Förbud mot trafik med hästfordon',
+    name: 'Förbud mot trafik med fordon förspänt med dragdjur',
     nameEn: 'No horse-drawn vehicles',
     nameAr: 'ممنوع العربات التي تجرّها الخيول',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -886,7 +886,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C18', code: 'C18',
-    name: 'Begränsad längd på fordon eller fordonståg',
+    name: 'Begränsad fordonslängd',
     nameEn: 'Maximum length of vehicle or combination',
     nameAr: 'الحد الأقصى لطول المركبة',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -898,7 +898,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C28', code: 'C28',
-    name: 'Slut på omkörningsförbud',
+    name: 'Slut på förbud mot omkörning',
     nameEn: 'End of no overtaking',
     nameAr: 'نهاية منع التجاوز',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -910,7 +910,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C29', code: 'C29',
-    name: 'Omkörning med lastbil förbjuden',
+    name: 'Förbud mot omkörning med tung lastbil',
     nameEn: 'No overtaking for trucks',
     nameAr: 'ممنوع تجاوز الشاحنات',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -1066,7 +1066,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C4', code: 'C4',
-    name: 'Förbud mot trafik med motordrivet fordon som har flera hjul än två',
+    name: 'Förbud mot trafik med motordrivet fordon med fler än två hjul',
     nameEn: 'No motor vehicles with more than two wheels',
     nameAr: 'ممنوع المركبات الآلية ذات أكثر من عجلتين',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -1102,7 +1102,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C19', code: 'C19',
-    name: 'Minsta avstånd mellan motordrivna fordon',
+    name: 'Minsta avstånd',
     nameEn: 'Minimum distance between vehicles',
     nameAr: 'الحد الأدنى للمسافة بين المركبات',
     category: 'prohibition', shape: 'circle', color: 'red',
@@ -1126,7 +1126,7 @@ export const ALL_SIGNS: TrafficSign[] = [
   },
   {
     id: 'C30', code: 'C30',
-    name: 'Slut på omkörningsförbud för lastbil',
+    name: 'Slut på förbud mot omkörning med tung lastbil',
     nameEn: 'End of no overtaking for trucks',
     nameAr: 'نهاية منع تجاوز الشاحنات',
     category: 'prohibition', shape: 'circle', color: 'red',
