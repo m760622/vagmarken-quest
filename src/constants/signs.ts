@@ -832,9 +832,9 @@ export const ALL_SIGNS: TrafficSign[] = [
     category: 'prohibition', shape: 'circle', color: 'red',
     symbol: '🚜',
     imageUrl: signImage('C8'),
-    description: 'Förbjuder trafik med traktor och motorredskap.',
-    descriptionEn: 'Prohibits tractors and motor implements.',
-    descriptionAr: 'يمنع سير الجرارات والآليات ذاتية الحركة.',
+    description: 'Förbjuder trafik med traktor och motorredskap klass II.',
+    descriptionEn: 'Prohibits tractors and class II motor implements.',
+    descriptionAr: 'يمنع سير الجرارات والآليات ذاتية الحركة (الفئة 2).',
   },
   {
     id: 'C9', code: 'C9',
@@ -856,9 +856,9 @@ export const ALL_SIGNS: TrafficSign[] = [
     category: 'prohibition', shape: 'circle', color: 'red',
     symbol: '🐴',
     imageUrl: signImage('C12'),
-    description: 'Förbjuder trafik med hästfordon.',
-    descriptionEn: 'Prohibits horse-drawn vehicles.',
-    descriptionAr: 'يمنع سير العربات التي تجرّها الخيول.',
+    description: 'Förbjuder trafik med fordon förspänt med dragdjur.',
+    descriptionEn: 'Prohibits animal-drawn vehicles.',
+    descriptionAr: 'يمنع سير العربات التي تجرّها الحيوانات.',
   },
   {
     id: 'C14', code: 'C14',
@@ -1144,9 +1144,9 @@ export const ALL_SIGNS: TrafficSign[] = [
     category: 'mandatory', shape: 'circle', color: 'blue',
     symbol: '🚌',
     imageUrl: signImage('D10'),
-    description: 'Anger början på ett körfält som är avsett för fordon i linjetrafik.',
-    descriptionEn: 'Marks the start of a lane reserved for scheduled (public transport) services.',
-    descriptionAr: 'يبيّن بداية مسار مخصص لمركبات النقل العام المنتظم.',
+    description: 'Anger början på ett påbjudet körfält eller en påbjuden körbana för fordon i linjetrafik med flera.',
+    descriptionEn: 'Marks the start of a mandatory lane or carriageway for scheduled (public transport) services and others.',
+    descriptionAr: 'يبيّن بداية مسار أو طريق إلزامي لمركبات النقل العام المنتظم وغيرها.',
   },
   // ── T. TILLÄGGSTAVLOR (Additional plates) — verified names, public-domain images ──
   {
