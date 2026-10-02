@@ -32,10 +32,13 @@ describe('buildChoices / pickDistractors', () => {
 });
 
 describe('signPool', () => {
-  it('tops a 5-sign category up to the minimum with other signs', () => {
-    const pool = signPool(all, 'additional', 6, seeded(3));
-    expect(pool).toHaveLength(6);
-    expect(pool.filter(s => s.category === 'additional')).toHaveLength(5);
+  it('tops a small category up to the minimum with other signs', () => {
+    const own = all.filter(s => s.category === 'additional').length;   // a small category: the additional plates
+    expect(own).toBeGreaterThan(0);
+    expect(all.length).toBeGreaterThan(own);
+    const pool = signPool(all, 'additional', own + 1, seeded(3));
+    expect(pool).toHaveLength(own + 1);
+    expect(pool.filter(s => s.category === 'additional')).toHaveLength(own);
   });
 
   it('returns every sign for "all"', () => {

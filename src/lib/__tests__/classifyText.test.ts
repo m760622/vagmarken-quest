@@ -15,11 +15,15 @@ describe('classify texts', () => {
     }
   });
 
-  it('writes the real counts for a warning sign (34 of 35 red triangles)', () => {
+  it('writes the real counts for a warning sign (counted here from the data, so it holds as signs are added)', () => {
     const warning = all.find(s => s.category === 'warning')!;
-    expect(lookSentence(all, warning, 'en', CATEGORY_LABELS_I18N.en.warning)).toBe('Red triangles: 34 of 35 are “Warning signs”.');
-    expect(lookSentence(all, warning, 'sv', CATEGORY_LABELS_I18N.sv.warning)).toContain('34 av 35');
-    expect(lookSentence(all, warning, 'ar', CATEGORY_LABELS_I18N.ar.warning)).toContain('34 من 35');
+    const sameLook = all.filter(s => s.shape === warning.shape && s.color === warning.color);
+    const total = sameLook.length;
+    const inCategory = sameLook.filter(s => s.category === 'warning').length;
+    expect(inCategory).toBeLessThan(total);   // the give-way triangle shares the look but is not a warning sign
+    expect(lookSentence(all, warning, 'en', CATEGORY_LABELS_I18N.en.warning)).toBe(`Red triangles: ${inCategory} of ${total} are “Warning signs”.`);
+    expect(lookSentence(all, warning, 'sv', CATEGORY_LABELS_I18N.sv.warning)).toContain(`${inCategory} av ${total}`);
+    expect(lookSentence(all, warning, 'ar', CATEGORY_LABELS_I18N.ar.warning)).toContain(`${inCategory} من ${total}`);
   });
 
   it('says "the only one" for a shape and colour that has a single sign (the stop octagon)', () => {
@@ -30,8 +34,10 @@ describe('classify texts', () => {
 
   it('mentions the category of the sign itself, so a rare exception reads correctly', () => {
     const giveWay = all.find(s => s.category === 'priority' && s.shape === 'triangle')!;
+    const sameLook = all.filter(s => s.shape === giveWay.shape && s.color === giveWay.color);
+    const inCategory = sameLook.filter(s => s.category === 'priority').length;
     const line = lookSentence(all, giveWay, 'en', CATEGORY_LABELS_I18N.en.priority)!;
-    expect(line).toBe('Red triangles: 1 of 35 are “Priority signs”.');
+    expect(line).toBe(`Red triangles: ${inCategory} of ${sameLook.length} are “Priority signs”.`);
   });
 
   it('has an exception note in every language', () => {
