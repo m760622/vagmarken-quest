@@ -1,4 +1,5 @@
 import { TrafficSign } from '@/types/game';
+import { splitSigns } from '@/lib/signList';
 
 /**
  * Sign images are bundled locally (public/signs/<id>.png) so the game works
@@ -13,8 +14,12 @@ const signImage = (id: string) => `${import.meta.env.BASE_URL}signs/${id.toLower
  * Swedish traffic signs — codes, names and descriptions verified against
  * Transportstyrelsen (TSFS 2019:74) and Vägmärkesförordningen (SFS 2007:90).
  * Official PNG images are bundled with the app (see signImage).
+ *
+ * ALL_SIGNS is the full data list. The app reads TRAFFIC_SIGNS (below), which leaves out signs flagged
+ * `placeholder: true` (texts entered, official image still missing). To finish one: add public/signs/<id>.png
+ * + `imageUrl: signImage('<id>')`, then delete the flag. Only the data-integrity test reads ALL_SIGNS.
  */
-export const TRAFFIC_SIGNS: TrafficSign[] = [
+export const ALL_SIGNS: TrafficSign[] = [
 
   // ── A. VARNINGSMÄRKEN (Warning signs) ─────────────────────────────
   {
@@ -1205,6 +1210,9 @@ export const TRAFFIC_SIGNS: TrafficSign[] = [
     descriptionAr: 'لافتة إضافية لتقاطع «قِف» من جميع الاتجاهات، حيث يجب أن تتوقف كل المداخل.',
   },
 ];
+
+/** What the app shows and plays with: every sign that has its official image. */
+export const TRAFFIC_SIGNS: TrafficSign[] = splitSigns(ALL_SIGNS).playable;
 
 export const CATEGORY_LABELS: Record<string, string> = {
   all: 'Alla märken',
