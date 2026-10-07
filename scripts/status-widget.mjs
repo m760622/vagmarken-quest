@@ -1,6 +1,6 @@
 // Writes a one-page status widget (device, memory, model, context window, last request, repo) as HTML.
 //   node scripts/status-widget.mjs --out <file.html> [--model <name>] [--ctx-used <tokens>] [--ctx-total <tokens>]
-//        [--fragment] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
+//        [--fragment] [--ctx-window <tokens> --ctx-now <tokens>] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
 // Device, memory, disk and repo are read live; the model, context and request numbers can only come from the
 // caller, and show "—" when left out. Claude prints it when the user types "جججج" (see CLAUDE.md).
 import { writeFileSync, readFileSync } from 'node:fs';
@@ -35,51 +35,56 @@ const ctxUsed = num(arg('ctx-used')), ctxTotal = num(arg('ctx-total'));
 const ctxPct = ctxUsed !== null && ctxTotal ? pct(ctxUsed, ctxTotal) : null;
 const model = arg('model') || '—';
 
+
 // Numbers and units stay left-to-right inside the right-to-left page, so "0.4 / 15.7 GB" and "25K / 15M" read in order.
 const ltr = s => `<span class="n">${esc(s)}</span>`;
 const level = p => (p >= 90 ? 'crit' : p >= 70 ? 'warn' : 'ok');
-const bar = p => `<div class="bar ${level(p)}"><i style="width:${Math.max(p, p > 0 ? 1.5 : 0).toFixed(1)}%"></i></div>`;
-const meter = (label, p, detail) => `<div class="meter"><div class="row"><span>${label}</span><span class="big ${level(p)}">${ltr(p.toFixed(1) + '%')}</span></div>${bar(p)}<div class="mut">${detail}</div></div>`;
+const bar = (p, c) => `<div class="bar ${level(p)}" style="--c:var(--c-${c})"><i style="width:${Math.max(p, p > 0 ? 1.5 : 0).toFixed(1)}%"></i></div>`;
+const meter = (label, p, detail, c) => `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(p)}">${ltr(p.toFixed(1) + '%')}</b></div>${bar(p, c)}<div class="mut">${detail}</div></div>`;
 const tile = (k, v) => `<div class="tile"><span class="mut">${esc(k)}</span><b>${ltr(v)}</b></div>`;
 
 const memPct = pct(memUsed, mem.MemTotal), diskPct = pct(diskUsed, diskTotal);
-const now = new Date().toISOString().slice(11, 16) + ' UTC';
+const today = new Date();
+const now = today.toISOString().slice(11, 16) + ' UTC';
+const dateAr = today.toLocaleDateString('ar-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const claudeMd = (() => { try { const t = readFileSync('CLAUDE.md', 'utf8'); return { lines: t.split('\n').length, tokens: Math.round(Buffer.byteLength(t) / 4) }; } catch { return null; } })();
+const ctxWin = num(arg('ctx-window')), ctxNow = num(arg('ctx-now'));
+const ctxNowPct = ctxWin && ctxNow !== null ? pct(ctxNow, ctxWin) : null;
 
 // --fragment: no doctype/html/head/body, for publishing as a claude.ai Artifact (the host adds the skeleton).
 const fragment = args.includes('--fragment');
 const head = fragment ? '' : '<!doctype html>\n<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n';
 writeFileSync(out, `${head}<title>حالة الجلسة</title>
 <style>
-:root{--bg:#0e0f12;--card:#17181c;--line:#2a2c32;--fg:#f2f3f5;--mut:#9094a0;--acc:#4b7bec;--ok:#3ddc97;--warn:#f5a524;--crit:#ff6b6b;color-scheme:dark}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f5f7;--card:#fff;--line:#dcdee3;--fg:#15161a;--mut:#5f636e;--acc:#2f5fd0;--ok:#0f8f5b;--warn:#a85f00;--crit:#c62828;color-scheme:light}}
-:root[data-theme="light"]{--bg:#f4f5f7;--card:#fff;--line:#dcdee3;--fg:#15161a;--mut:#5f636e;--acc:#2f5fd0;--ok:#0f8f5b;--warn:#a85f00;--crit:#c62828;color-scheme:light}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,"Segoe UI",Tahoma,sans-serif;padding:16px}
-.w{max-width:680px;margin:0 auto;display:grid;gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
-.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-h1{font-size:18px;margin:0}.mut{color:var(--mut);font-size:13px}.big{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+:root{--bg:#0e0f12;--card:#17181c;--line:#2a2c32;--fg:#f2f3f5;--mut:#9094a0;--acc:#4b7bec;--ok:#3ddc97;--warn:#f5a524;--crit:#ff6b6b;--c-cpu:#5b8def;--c-mem:#a78bfa;--c-disk:#2dd4bf;--c-tok:#fbbf24;--c-model:#f472b6;--c-node:#84cc16;--c-req:#fb923c;--c-repo:#38bdf8;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f5f7;--card:#fff;--line:#dcdee3;--fg:#15161a;--mut:#5f636e;--acc:#2f5fd0;--ok:#0f8f5b;--warn:#a85f00;--crit:#c62828;--c-cpu:#2f5fd0;--c-mem:#7c3aed;--c-disk:#0d9488;--c-tok:#b45309;--c-model:#be185d;--c-node:#4d7c0f;--c-req:#c2410c;--c-repo:#0369a1;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f4f5f7;--card:#fff;--line:#dcdee3;--fg:#15161a;--mut:#5f636e;--acc:#2f5fd0;--ok:#0f8f5b;--warn:#a85f00;--crit:#c62828;--c-cpu:#2f5fd0;--c-mem:#7c3aed;--c-disk:#0d9488;--c-tok:#b45309;--c-model:#be185d;--c-node:#4d7c0f;--c-req:#c2410c;--c-repo:#0369a1;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,"Segoe UI",Tahoma,sans-serif;padding:12px 16px}
+.w{max-width:680px;margin:0 auto;display:grid;gap:8px}
+.card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--c,var(--acc));border-radius:12px;padding:8px 12px;min-width:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15px}
 .n{direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
-.bar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin:6px 0 4px}.bar i{display:block;height:100%;border-radius:8px;background:var(--acc)}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:3px 0 2px}.bar i{display:block;height:100%;border-radius:6px;background:var(--c,var(--acc))}
 .bar.warn i{background:var(--warn)}.bar.crit i{background:var(--crit)}
-.big.warn{color:var(--warn)}.big.crit{color:var(--crit)}
-.meter+.meter{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
-.tag{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--mut);white-space:nowrap}.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.warn{color:var(--warn);border-color:var(--warn)}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.two .big{font-size:18px;overflow-wrap:anywhere}
-.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.tile{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}.tile b{font-size:17px}
+.v.warn{color:var(--warn)}.v.crit{color:var(--crit)}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 6px;color:var(--mut);white-space:nowrap}.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.warn{color:var(--warn);border-color:var(--warn)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}.three .mut{font-size:11px}
+.k{color:var(--c);font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.tile{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:2px 8px;min-width:0}.tile b{font-size:14px}
 @media(max-width:380px){.tiles{grid-template-columns:repeat(2,1fr)}}
 </style>${fragment ? '' : '</head><body>'}<div class="w" dir="rtl">
-<div class="card"><div class="row"><h1>حالة الجلسة</h1><span class="tag">حاوية سحابية · ${n} أنوية · ${ltr(now)}</span></div>
-<div class="mut" style="margin:2px 0 14px">${ltr(type() + ' ' + release() + ' · ' + arch())}</div>
-${meter('المعالج (متوسط الحمل)', cpuPct, '')}
-${meter(`الذاكرة <span class="tag ${level(memPct)}">متاحة ${(100 - memPct).toFixed(0)}%</span>`, memPct, ltr(`${gb(memUsed)} / ${gb(mem.MemTotal)}`))}
-${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`))}</div>
-<div class="two">
-<div class="card"><div class="mut">النموذج الحالي</div><div class="big">${ltr(model)}</div></div>
-<div class="card"><div class="mut">Node</div><div class="big">${ltr(process.version)}</div></div></div>
-<div class="card">${meter('توكنز الجلسة المستهلكة', ctxPct ?? 0, ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`))}</div>
-<div class="card"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
-<div class="card"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
-<div class="mut" style="margin-top:6px">${ltr(last)}</div></div>
+<div class="card"><div class="row"><h1>حالة الجلسة</h1><span class="mut">${esc(dateAr)} · ${ltr(now)}</span></div>
+<div class="row"><span class="mut">${ltr(type() + ' ' + release() + ' · ' + arch())}</span><span class="tag">حاوية سحابية · ${n} أنوية</span></div>
+<div class="three">
+${meter('المعالج', cpuPct, 'متوسط الحمل', 'cpu')}
+${meter('الذاكرة', memPct, ltr(`${gb(memUsed)} / ${gb(mem.MemTotal)}`), 'mem')}
+${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`), 'disk')}</div></div>
+<div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct ?? 0, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? 'نافذة السياق: غير متاحة لي' : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${ltr(`${claudeMd.lines} سطرًا ≈ ${tok(claudeMd.tokens)}`)}` : ''}`, 'tok')}</div>
+<div class="card" style="--c:var(--c-model)"><div class="row"><span><span class="mut">النموذج</span> <b class="k" style="--c:var(--c-model)">${ltr(model)}</b></span><span><span class="mut">Node</span> <b class="k" style="--c:var(--c-node)">${ltr(process.version)}</b></span></div></div>
+<div class="card" style="--c:var(--c-req)"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
+<div class="card" style="--c:var(--c-repo)"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
+<div class="mut">${ltr(last)}</div></div>
 </div>${fragment ? '' : '</body></html>'}
 `);
 console.log(`wrote ${out}`);
