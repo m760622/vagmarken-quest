@@ -8,6 +8,11 @@
 - Ask about the next step, not for permission for the last one. Don't repeat a question the user already answered.
 - Do this even when nothing is blocked. If a real decision blocks the work, ask it first, then still end with the options.
 
+## Status widget
+
+- When the user's whole message is `جججج`, show the status widget instead of answering in text: run `node scripts/status-widget.mjs --out <scratchpad>/status.html --model <your model> --ctx-used <tokens used so far> --ctx-total <session token budget>` and send it with SendUserFile (display: render).
+- Pass only numbers you actually know; leave a flag out and the widget shows "—". Say in one line that the device is the cloud container, not the user's computer.
+
 ## Version number
 
 - The app version is `version` in `package.json`. It is shown in the app (Menu, bottom of Settings) next to the short commit id of the build.
