@@ -1,6 +1,6 @@
 // Writes a one-page status widget (device, memory, model, context window, last request, repo) as HTML.
 //   node scripts/status-widget.mjs --out <file.html> [--model <name>] [--ctx-used <tokens>] [--ctx-total <tokens>]
-//        [--fragment] [--ctx-window <tokens> --ctx-now <tokens>] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
+//        [--fragment] [--quota-week-left <pct> --quota-5h-left <pct> --quota-renew <text>] [--ctx-window <tokens> --ctx-now <tokens>] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
 // Device, memory, disk and repo are read live; the model, context and request numbers can only come from the
 // caller, and show "—" when left out. Claude prints it when the user types "جججج" (see CLAUDE.md).
 import { writeFileSync, readFileSync } from 'node:fs';
@@ -60,6 +60,11 @@ const TZ = 'Europe/Stockholm'; // Swedish time (CET/CEST)
 const now = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ, timeZoneName: 'short' });
 const dateAr = today.toLocaleDateString('ar-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: TZ });
 const claudeMd = (() => { try { const t = readFileSync('CLAUDE.md', 'utf8'); return { lines: t.split('\n').length, tokens: Math.round(Buffer.byteLength(t) / 4) }; } catch { return null; } })();
+// Plan quota is not visible to Claude: it only shows when the user passes the numbers from /usage.
+const weekLeft = num(arg('quota-week-left')), hourLeft = num(arg('quota-5h-left')), renew = arg('quota-renew');
+const quotaRow = (label, left) => left === null
+  ? `<div class="meter"><div class="row"><span>${label}</span><span class="tag">غير متاحة لي</span></div></div>`
+  : `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(100 - left)}">${ltr(left.toFixed(0) + '%')} <span class="mut">متبقٍّ</span></b></div>${bar(left, 'repo').replace(/class="bar [a-z]+"/, `class="bar ${level(100 - left)}"`)}</div>`;
 const ctxWin = num(arg('ctx-window')), ctxNow = num(arg('ctx-now'));
 const ctxNowPct = ctxWin && ctxNow !== null ? pct(ctxNow, ctxWin) : null;
 
@@ -94,6 +99,8 @@ ${meter('المعالج', cpuPct, 'متوسط الحمل', 'cpu')}
 ${meter('الذاكرة', memPct, ltr(`${gb(memUsed)} / ${gb(mem.MemTotal)}`), 'mem')}
 ${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`), 'disk')}</div></div>
 <div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? 'نافذة السياق: غير متاحة لي' : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${`${claudeMd.lines} سطرًا ≈ ${ltr(tok(claudeMd.tokens))}`}` : ''}`, 'tok')}</div>
+<div class="card" style="--c:var(--c-repo)"><div class="row"><b>حصة الاشتراك</b><span class="mut">${renew ? `التجدد ${ltr(renew)}` : 'تاريخ التجدد: غير متاح لي'}</span></div>
+${quotaRow('الأسبوع', weekLeft)}${quotaRow('كل 5 ساعات', hourLeft)}</div>
 <div class="card" style="--c:var(--c-model)"><div class="row"><span><span class="mut">النموذج</span> <b class="k" style="--c:var(--c-model)">${ltr(model)}</b></span><span><span class="mut">Node</span> <b class="k" style="--c:var(--c-node)">${ltr(process.version)}</b></span></div></div>
 <div class="card" style="--c:var(--c-req)"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
 <div class="card" style="--c:var(--c-repo)"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
