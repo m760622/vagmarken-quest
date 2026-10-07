@@ -46,11 +46,12 @@ const model = arg('model') || '—';
 
 // Numbers and units stay left-to-right inside the right-to-left page, so "0.4 / 15.7 GB" and "25K / 15M" read in order.
 const ltr = s => `<span class="n">${esc(s)}</span>`;
+const levelText = { ok: 'طبيعي', warn: 'مرتفع', crit: 'حرج' };
 const level = p => (p >= 90 ? 'crit' : p >= 70 ? 'warn' : 'ok');
 const bar = (p, c) => `<div class="bar ${level(p)}" style="--c:var(--c-${c})"><i style="width:${Math.max(p, p > 0 ? 1.5 : 0).toFixed(1)}%"></i></div>`;
 const meter = (label, p, detail, c) => p === null
   ? `<div class="meter"><div class="row"><span>${label}</span><span class="tag">غير معروف</span></div><div class="mut">${detail}</div></div>`
-  : `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(p)}">${ltr(p.toFixed(1) + '%')}</b></div>${bar(p, c)}<div class="mut">${detail}</div></div>`;
+  : `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(p)}">${ltr(p.toFixed(1) + '%')}</b></div>${bar(p, c)}<div class="mut"><span class="lv ${level(p)}">${levelText[level(p)]}</span>${detail ? ' ' + detail : ''}</div></div>`;
 const tile = (k, v) => `<div class="tile"><span class="mut">${esc(k)}</span><b>${ltr(v)}</b></div>`;
 
 const memPct = pct(memUsed, mem.MemTotal), diskPct = pct(diskUsed, diskTotal);
@@ -78,7 +79,8 @@ h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15p
 .n{direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
 .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:3px 0 2px}.bar i{display:block;height:100%;border-radius:6px;background:var(--c,var(--acc))}
 .bar.warn i{background:var(--warn)}.bar.crit i{background:var(--crit)}
-.v.warn{color:var(--warn)}.v.crit{color:var(--crit)}
+.v.warn,.lv.warn{color:var(--warn)}.v.crit,.lv.crit{color:var(--crit)}.lv.ok{color:var(--ok)}.lv{font-weight:600;margin-inline-end:6px}
+.foot{text-align:center;line-height:1.7;padding:2px 4px}
 .tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 6px;color:var(--mut);white-space:nowrap}.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.warn{color:var(--warn);border-color:var(--warn)}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}.three .mut{font-size:11px}
 .k{color:var(--c);font-weight:700}
@@ -96,6 +98,7 @@ ${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`), 'disk'
 <div class="card" style="--c:var(--c-req)"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
 <div class="card" style="--c:var(--c-repo)"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
 <div class="mut">${ltr(last)}</div></div>
+<div class="mut foot">لقطة وقت التوليد ${ltr(now)} (السويد) · لا تحديث تلقائي، اكتب «جججج» لتحديثها<br>— تعني أن القياس غير متاح لي</div>
 </div>${fragment ? '' : '</body></html>'}
 `);
 console.log(`wrote ${out}`);
