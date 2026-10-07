@@ -22,6 +22,14 @@ const pct = (a, b) => (b > 0 ? Math.min(100, Math.max(0, (a / b) * 100)) : 0);
 const n = cpus().length;
 const cpuPct = Math.min(100, (loadavg()[0] / n) * 100);
 const mem = Object.fromEntries(readFileSync('/proc/meminfo', 'utf8').split('\n').filter(Boolean).map(l => { const [k, v] = l.split(':'); return [k, parseInt(v, 10)]; }));
+// In a container /proc/meminfo describes the host, so prefer the cgroup limit and usage (v2, then v1) when they are lower.
+const readNum = f => { try { const t = readFileSync(f, 'utf8').trim(); return /^\d+$/.test(t) ? Number(t) : null; } catch { return null; } };
+const stat = f => { try { return Object.fromEntries(readFileSync(f, 'utf8').trim().split('\n').map(l => l.split(' '))); } catch { return {}; } };
+const cg = [['/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory.current', '/sys/fs/cgroup/memory.stat', 'inactive_file'],
+  ['/sys/fs/cgroup/memory/memory.limit_in_bytes', '/sys/fs/cgroup/memory/memory.usage_in_bytes', '/sys/fs/cgroup/memory/memory.stat', 'total_inactive_file']]
+  .map(([lim, cur, st, key]) => ({ lim: readNum(lim), cur: readNum(cur), cache: Number(stat(st)[key] || 0) / 1024 }))
+  .find(c => c.lim !== null && c.cur !== null && c.lim / 1024 < mem.MemTotal);
+if (cg) { mem.MemTotal = cg.lim / 1024; mem.MemAvailable = Math.max(0, mem.MemTotal - Math.max(0, cg.cur / 1024 - cg.cache)); }
 const memUsed = mem.MemTotal - mem.MemAvailable;
 const disk = run('df', ['-Pk', '/home']).split('\n')[1]?.split(/\s+/) || [];
 const diskTotal = Number(disk[1]) || 0, diskUsed = Number(disk[2]) || 0;
@@ -40,7 +48,9 @@ const model = arg('model') || '—';
 const ltr = s => `<span class="n">${esc(s)}</span>`;
 const level = p => (p >= 90 ? 'crit' : p >= 70 ? 'warn' : 'ok');
 const bar = (p, c) => `<div class="bar ${level(p)}" style="--c:var(--c-${c})"><i style="width:${Math.max(p, p > 0 ? 1.5 : 0).toFixed(1)}%"></i></div>`;
-const meter = (label, p, detail, c) => `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(p)}">${ltr(p.toFixed(1) + '%')}</b></div>${bar(p, c)}<div class="mut">${detail}</div></div>`;
+const meter = (label, p, detail, c) => p === null
+  ? `<div class="meter"><div class="row"><span>${label}</span><span class="tag">غير معروف</span></div><div class="mut">${detail}</div></div>`
+  : `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(p)}">${ltr(p.toFixed(1) + '%')}</b></div>${bar(p, c)}<div class="mut">${detail}</div></div>`;
 const tile = (k, v) => `<div class="tile"><span class="mut">${esc(k)}</span><b>${ltr(v)}</b></div>`;
 
 const memPct = pct(memUsed, mem.MemTotal), diskPct = pct(diskUsed, diskTotal);
@@ -81,7 +91,7 @@ h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15p
 ${meter('المعالج', cpuPct, 'متوسط الحمل', 'cpu')}
 ${meter('الذاكرة', memPct, ltr(`${gb(memUsed)} / ${gb(mem.MemTotal)}`), 'mem')}
 ${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`), 'disk')}</div></div>
-<div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct ?? 0, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? 'نافذة السياق: غير متاحة لي' : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${`${claudeMd.lines} سطرًا ≈ ${ltr(tok(claudeMd.tokens))}`}` : ''}`, 'tok')}</div>
+<div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? 'نافذة السياق: غير متاحة لي' : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${`${claudeMd.lines} سطرًا ≈ ${ltr(tok(claudeMd.tokens))}`}` : ''}`, 'tok')}</div>
 <div class="card" style="--c:var(--c-model)"><div class="row"><span><span class="mut">النموذج</span> <b class="k" style="--c:var(--c-model)">${ltr(model)}</b></span><span><span class="mut">Node</span> <b class="k" style="--c:var(--c-node)">${ltr(process.version)}</b></span></div></div>
 <div class="card" style="--c:var(--c-req)"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
 <div class="card" style="--c:var(--c-repo)"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
