@@ -45,8 +45,9 @@ const tile = (k, v) => `<div class="tile"><span class="mut">${esc(k)}</span><b>$
 
 const memPct = pct(memUsed, mem.MemTotal), diskPct = pct(diskUsed, diskTotal);
 const today = new Date();
-const now = today.toISOString().slice(11, 16) + ' UTC';
-const dateAr = today.toLocaleDateString('ar-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const TZ = 'Europe/Stockholm'; // Swedish time (CET/CEST)
+const now = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ, timeZoneName: 'short' });
+const dateAr = today.toLocaleDateString('ar-u-nu-latn', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: TZ });
 const claudeMd = (() => { try { const t = readFileSync('CLAUDE.md', 'utf8'); return { lines: t.split('\n').length, tokens: Math.round(Buffer.byteLength(t) / 4) }; } catch { return null; } })();
 const ctxWin = num(arg('ctx-window')), ctxNow = num(arg('ctx-now'));
 const ctxNowPct = ctxWin && ctxNow !== null ? pct(ctxNow, ctxWin) : null;
@@ -74,7 +75,7 @@ h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15p
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.tile{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:2px 8px;min-width:0}.tile b{font-size:14px}
 @media(max-width:380px){.tiles{grid-template-columns:repeat(2,1fr)}}
 </style>${fragment ? '' : '</head><body>'}<div class="w" dir="rtl">
-<div class="card"><div class="row"><h1>حالة الجلسة</h1><span class="mut">${esc(dateAr)} · ${ltr(now)}</span></div>
+<div class="card"><div class="row"><h1>حالة الجلسة</h1><span class="mut">${esc(dateAr)} · ${ltr(now)} (السويد)</span></div>
 <div class="row"><span class="mut">${ltr(type() + ' ' + release() + ' · ' + arch())}</span><span class="tag">حاوية سحابية · ${n} أنوية</span></div>
 <div class="three">
 ${meter('المعالج', cpuPct, 'متوسط الحمل', 'cpu')}
