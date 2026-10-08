@@ -34,7 +34,7 @@ const memUsed = mem.MemTotal - mem.MemAvailable;
 const disk = run('df', ['-Pk', '/home']).split('\n')[1]?.split(/\s+/) || [];
 const diskTotal = Number(disk[1]) || 0, diskUsed = Number(disk[2]) || 0;
 
-const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const pkg = (() => { try { return JSON.parse(readFileSync('package.json', 'utf8')); } catch { return { name: process.cwd().split('/').pop(), version: '—' }; } })();
 const branch = run('git', ['branch', '--show-current']) || '—';
 const dirty = run('git', ['status', '--short']).split('\n').filter(Boolean).length;
 const last = run('git', ['log', '-1', '--format=%h · %s']);
