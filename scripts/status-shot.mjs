@@ -7,8 +7,8 @@ let pw; try { pw = req('playwright'); } catch { try { pw = req('@playwright/test
 const [,, inp, outp] = process.argv;
 const exe = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 const b = await pw.chromium.launch(exe ? { executablePath: exe } : {}).catch(e => { console.error('status-shot: cannot start Chromium (' + e.message.split('\n')[0] + '); send the artifact link instead of an image.'); process.exit(1); });
-const p = await b.newPage({ viewport: { width: 400, height: 640 }, deviceScaleFactor: 2, colorScheme: 'dark' });
+const p = await b.newPage({ viewport: { width: 400, height: 2000 }, deviceScaleFactor: 2, colorScheme: 'dark' });
 await p.goto('file://' + inp);
 const h = await p.evaluate(() => Math.ceil(document.querySelector(".w").getBoundingClientRect().bottom) + 12);
-await p.screenshot({ path: outp, clip: { x: 0, y: 0, width: 400, height: Math.min(h, 640) } });
+await p.screenshot({ path: outp, clip: { x: 0, y: 0, width: 400, height: h } });
 await b.close();

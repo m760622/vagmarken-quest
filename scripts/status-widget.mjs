@@ -1,10 +1,10 @@
 // Writes a one-page status widget (device, memory, model, context window, last request, repo) as HTML.
 //   node scripts/status-widget.mjs --out <file.html> [--model <name>] [--ctx-used <tokens>] [--ctx-total <tokens>]
-//        [--fragment] [--quota-week-left <pct> --quota-5h-left <pct> --quota-renew <text>] [--ctx-window <tokens> --ctx-now <tokens>] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
+//        [--fragment] [--transcript <session.jsonl>] [--quota-week-left <pct> --quota-5h-left <pct> --quota-renew <text>] [--ctx-window <tokens> --ctx-now <tokens>] [--calls <n>] [--input <tokens>] [--output <tokens>] [--cache <tokens>]
 // Device, memory, disk and repo are read live; the model, context and request numbers can only come from the
 // caller, and show "—" when left out. Claude prints it when the user types "جججج" (see CLAUDE.md).
-import { writeFileSync, readFileSync } from 'node:fs';
-import { cpus, type, release, arch, loadavg } from 'node:os';
+import { writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { cpus, type, release, arch, loadavg, homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
@@ -65,7 +65,35 @@ const weekLeft = num(arg('quota-week-left')), hourLeft = num(arg('quota-5h-left'
 const quotaRow = (label, left) => left === null
   ? `<div class="meter"><div class="row"><span>${label}</span><span class="tag">غير متاحة لي</span></div></div>`
   : `<div class="meter"><div class="row"><span>${label}</span><b class="v ${level(100 - left)}">${ltr(left.toFixed(0) + '%')} <span class="mut">متبقٍّ</span></b></div>${bar(left, 'repo').replace(/class="bar [a-z]+"/, `class="bar ${level(100 - left)}"`)}</div>`;
-const ctxWin = num(arg('ctx-window')), ctxNow = num(arg('ctx-now'));
+// The session transcript (Claude Code's own jsonl log) holds real API usage and tool calls. --transcript <file>,
+// else the newest .jsonl under ~/.claude/projects/<this directory>; it may belong to another session if two run at once.
+const findTranscript = () => {
+  const given = arg('transcript'); if (given) return given;
+  try {
+    const dir = `${homedir()}/.claude/projects/${process.cwd().replace(/[\\/]/g, '-')}`;
+    return readdirSync(dir).filter(f => f.endsWith('.jsonl')).map(f => `${dir}/${f}`).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0] || null;
+  } catch { return null; }
+};
+const readTranscript = file => {
+  const tools = new Map(), calls = new Map(), seenTool = new Set();
+  try {
+    for (const line of readFileSync(file, 'utf8').split('\n')) {
+      let o; try { o = JSON.parse(line); } catch { continue; }
+      const m = o.message;
+      if (o.type !== 'assistant' || !m) continue;
+      if (m.id && m.usage) calls.set(m.id, m.usage);
+      if (Array.isArray(m.content)) for (const b of m.content) if (b.type === 'tool_use' && !seenTool.has(b.id)) { seenTool.add(b.id); tools.set(b.name, (tools.get(b.name) || 0) + 1); }
+    }
+  } catch { return null; }
+  const last = [...calls.values()].pop();
+  return calls.size ? { tools: [...tools].sort((a, b) => b[1] - a[1]), apiCalls: calls.size, last } : null;
+};
+const tr = (() => { const f = findTranscript(); return f ? readTranscript(f) : null; })();
+const lastIn = tr ? (tr.last.input_tokens || 0) + (tr.last.cache_creation_input_tokens || 0) : null;
+const lastCache = tr ? tr.last.cache_read_input_tokens || 0 : null;
+const lastOut = tr ? tr.last.output_tokens || 0 : null;
+const toolName = n => n.replace(/^mcp__([^_]+(?:_[^_]+)*)__/, '$1:');
+const ctxWin = num(arg('ctx-window')), ctxNow = num(arg('ctx-now')) ?? (tr ? lastIn + lastCache : null);
 const ctxNowPct = ctxWin && ctxNow !== null ? pct(ctxNow, ctxWin) : null;
 
 // --fragment: no doctype/html/head/body, for publishing as a claude.ai Artifact (the host adds the skeleton).
@@ -91,6 +119,7 @@ h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15p
 .k{color:var(--c);font-weight:700}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.tile{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:2px 8px;min-width:0}.tile b{font-size:14px}
 @media(max-width:380px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chip{border:1px solid var(--line);border-radius:8px;padding:1px 8px;font-size:12px}.chip b{margin-inline-start:4px}
 </style>${fragment ? '' : '</head><body>'}<div class="w" dir="rtl">
 <div class="card"><div class="row"><h1>حالة الجلسة</h1><span class="mut">${esc(dateAr)} · ${ltr(now)} (السويد)</span></div>
 <div class="row"><span class="mut">${ltr(type() + ' ' + release() + ' · ' + arch())}</span><span class="tag">حاوية سحابية · ${n} أنوية</span></div>
@@ -98,11 +127,12 @@ h1{font-size:16px;margin:0}.mut{color:var(--mut);font-size:12px}.v{font-size:15p
 ${meter('المعالج', cpuPct, 'متوسط الحمل', 'cpu')}
 ${meter('الذاكرة', memPct, ltr(`${gb(memUsed)} / ${gb(mem.MemTotal)}`), 'mem')}
 ${meter('القرص', diskPct, ltr(`${gb(diskUsed)} / ${gb(diskTotal)}`), 'disk')}</div></div>
-<div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? 'نافذة السياق: غير متاحة لي' : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${`${claudeMd.lines} سطرًا ≈ ${ltr(tok(claudeMd.tokens))}`}` : ''}`, 'tok')}</div>
+<div class="card" style="--c:var(--c-tok)">${meter('توكنز الجلسة', ctxPct, `${ltr(`${tok(ctxUsed)} / ${tok(ctxTotal)}`)} · ${ctxNowPct === null ? (ctxNow === null ? 'السياق الحالي: غير متاح لي' : `السياق الحالي ≈ ${ltr(tok(ctxNow))} (حجم النافذة غير معروف لي)`) : `نافذة السياق ${ltr(`${tok(ctxNow)} / ${tok(ctxWin)}`)} (${ltr(ctxNowPct.toFixed(1) + '%')})`}${claudeMd ? ` · CLAUDE.md ${`${claudeMd.lines} سطرًا ≈ ${ltr(tok(claudeMd.tokens))}`}` : ''}`, 'tok')}</div>
 <div class="card" style="--c:var(--c-repo)"><div class="row"><b>حصة الاشتراك</b><span class="mut">${renew ? `التجدد ${ltr(renew)}` : 'تاريخ التجدد: غير متاح لي'}</span></div>
 ${quotaRow('الأسبوع', weekLeft)}${quotaRow('كل 5 ساعات', hourLeft)}</div>
 <div class="card" style="--c:var(--c-model)"><div class="row"><span><span class="mut">النموذج</span> <b class="k" style="--c:var(--c-model)">${ltr(model)}</b></span><span><span class="mut">Node</span> <b class="k" style="--c:var(--c-node)">${ltr(process.version)}</b></span></div></div>
-<div class="card" style="--c:var(--c-req)"><span class="mut">الطلب السابق</span><div class="tiles">${tile('نداءات', tok(num(arg('calls'))))}${tile('مخزن', tok(num(arg('cache'))))}${tile('إدخال', tok(num(arg('input'))))}${tile('مخرج', tok(num(arg('output'))))}</div></div>
+<div class="card" style="--c:var(--c-req)"><span class="mut">آخر نداء للنموذج${tr ? ` · نداءات الجلسة ${ltr(String(tr.apiCalls))}` : ''}</span><div class="tiles">${tile('نداءات', tok(tr ? tr.apiCalls : null))}${tile('مخزن', tok(lastCache))}${tile('إدخال', tok(lastIn))}${tile('مخرج', tok(lastOut))}</div></div>
+${tr ? `<div class="card" style="--c:var(--c-node)"><span class="mut">أدوات الجلسة (${ltr(String(tr.tools.reduce((a, [, n]) => a + n, 0)))} استدعاءً)</span><div class="chips">${tr.tools.slice(0, 8).map(([n, c]) => `<span class="chip">${ltr(toolName(n))} <b>${ltr(String(c))}</b></span>`).join('')}${tr.tools.length > 8 ? `<span class="chip mut">${ltr('+' + (tr.tools.length - 8))}</span>` : ''}</div></div>` : ''}
 <div class="card" style="--c:var(--c-repo)"><div class="row"><span><b>${ltr(pkg.name)}</b> <span class="tag">${ltr('v' + pkg.version)}</span> <span class="tag ${dirty ? 'warn' : 'ok'}">${dirty ? `${dirty} ملفات معدّلة` : 'مستقر'}</span></span><span class="mut">${ltr(branch)}</span></div>
 <div class="mut">${ltr(last)}</div></div>
 <div class="mut foot">لقطة وقت التوليد ${ltr(now)} (السويد) · لا تحديث تلقائي، اكتب «جججج» لتحديثها<br>— تعني أن القياس غير متاح لي</div>
